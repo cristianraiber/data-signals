@@ -48,10 +48,10 @@ class Privacy_Manager {
 	private function init_hooks(): void {
 		// Privacy export hook
 		add_filter( 'wp_privacy_personal_data_exporters', array( $this, 'register_exporters' ) );
-		
+
 		// Privacy erasure hook
 		add_filter( 'wp_privacy_personal_data_erasers', array( $this, 'register_erasers' ) );
-		
+
 		// Schedule cleanup cron
 		if ( ! wp_next_scheduled( 'ds_cleanup_old_data' ) ) {
 			wp_schedule_event( time(), 'daily', 'ds_cleanup_old_data' );
@@ -187,7 +187,7 @@ class Privacy_Manager {
 		// Remove sensitive query parameters
 		if ( isset( $parsed['query'] ) ) {
 			parse_str( $parsed['query'], $params );
-			
+
 			// Blocklist of PII parameters
 			$blocklist = array( 'email', 'e', 'name', 'phone', 'address', 'token', 'key', 'password', 'pwd' );
 			foreach ( $blocklist as $blocked ) {
@@ -222,30 +222,38 @@ class Privacy_Manager {
 		$this->archive_old_data( $cutoff_date );
 
 		// Delete old pageviews
-		$deleted_pageviews = $wpdb->query( $wpdb->prepare(
-			"DELETE FROM {$wpdb->prefix}ds_pageviews WHERE created_at < %s",
-			$cutoff_date
-		) );
+		$deleted_pageviews = $wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$wpdb->prefix}ds_pageviews WHERE created_at < %s",
+				$cutoff_date
+			)
+		);
 
 		// Delete old events
-		$deleted_events = $wpdb->query( $wpdb->prepare(
-			"DELETE FROM {$wpdb->prefix}ds_events WHERE created_at < %s",
-			$cutoff_date
-		) );
+		$deleted_events = $wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$wpdb->prefix}ds_events WHERE created_at < %s",
+				$cutoff_date
+			)
+		);
 
 		// Delete old sessions
-		$deleted_sessions = $wpdb->query( $wpdb->prepare(
-			"DELETE FROM {$wpdb->prefix}ds_sessions WHERE last_seen < %s",
-			$cutoff_date
-		) );
+		$deleted_sessions = $wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$wpdb->prefix}ds_sessions WHERE last_seen < %s",
+				$cutoff_date
+			)
+		);
 
 		// Log cleanup
-		error_log( sprintf(
-			'Data Signals: Cleaned up old data. Deleted: %d pageviews, %d events, %d sessions',
-			$deleted_pageviews,
-			$deleted_events,
-			$deleted_sessions
-		) );
+		error_log(
+			sprintf(
+				'Data Signals: Cleaned up old data. Deleted: %d pageviews, %d events, %d sessions',
+				$deleted_pageviews,
+				$deleted_events,
+				$deleted_sessions
+			)
+		);
 	}
 
 	/**
@@ -256,7 +264,7 @@ class Privacy_Manager {
 	private function archive_old_data( string $cutoff_date ): void {
 		global $wpdb;
 
-		$upload_dir = wp_upload_dir();
+		$upload_dir  = wp_upload_dir();
 		$archive_dir = $upload_dir['basedir'] . '/data-signals-archives/';
 
 		// Create archive directory
@@ -268,10 +276,13 @@ class Privacy_Manager {
 		}
 
 		// Archive aggregates (keep forever)
-		$aggregates = $wpdb->get_results( $wpdb->prepare(
-			"SELECT * FROM {$wpdb->prefix}ds_aggregates WHERE date < %s",
-			gmdate( 'Y-m-d', strtotime( $cutoff_date ) )
-		), ARRAY_A );
+		$aggregates = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM {$wpdb->prefix}ds_aggregates WHERE date < %s",
+				gmdate( 'Y-m-d', strtotime( $cutoff_date ) )
+			),
+			ARRAY_A
+		);
 
 		if ( ! empty( $aggregates ) ) {
 			$filename = $archive_dir . 'aggregates_' . gmdate( 'Y-m-d' ) . '.json.gz';
@@ -281,10 +292,12 @@ class Privacy_Manager {
 
 		// Delete archived aggregates older than archive retention
 		$archive_cutoff = gmdate( 'Y-m-d', strtotime( '-' . self::ARCHIVE_RETENTION_DAYS . ' days' ) );
-		$wpdb->query( $wpdb->prepare(
-			"DELETE FROM {$wpdb->prefix}ds_aggregates WHERE date < %s",
-			$archive_cutoff
-		) );
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$wpdb->prefix}ds_aggregates WHERE date < %s",
+				$archive_cutoff
+			)
+		);
 	}
 
 	/**
@@ -312,28 +325,33 @@ class Privacy_Manager {
 	public function export_user_data( string $email_address, int $page = 1 ): array {
 		// Note: We don't store email addresses in analytics data
 		// But we can export purchase data if WooCommerce is active
-		
+
 		$data_to_export = array();
 
 		if ( class_exists( 'WooCommerce' ) ) {
 			global $wpdb;
 
 			// Get orders for this email
-			$orders = wc_get_orders( array(
-				'billing_email' => $email_address,
-				'limit'         => 100,
-			) );
+			$orders = wc_get_orders(
+				array(
+					'billing_email' => $email_address,
+					'limit'         => 100,
+				)
+			);
 
 			foreach ( $orders as $order ) {
 				$order_id = $order->get_id();
 
 				// Get analytics events for this order
-				$events = $wpdb->get_results( $wpdb->prepare(
-					"SELECT * FROM {$wpdb->prefix}ds_events 
+				$events = $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT * FROM {$wpdb->prefix}ds_events 
 					WHERE event_type = 'purchase' 
 					AND JSON_EXTRACT(metadata, '$.order_id') = %d",
-					$order_id
-				), ARRAY_A );
+						$order_id
+					),
+					ARRAY_A
+				);
 
 				if ( ! empty( $events ) ) {
 					$data_to_export[] = array(
@@ -398,21 +416,25 @@ class Privacy_Manager {
 
 		if ( class_exists( 'WooCommerce' ) ) {
 			// Get orders for this email
-			$orders = wc_get_orders( array(
-				'billing_email' => $email_address,
-				'limit'         => 100,
-			) );
+			$orders = wc_get_orders(
+				array(
+					'billing_email' => $email_address,
+					'limit'         => 100,
+				)
+			);
 
 			foreach ( $orders as $order ) {
 				$order_id = $order->get_id();
 
 				// Anonymize metadata in events
-				$updated = $wpdb->query( $wpdb->prepare(
-					"UPDATE {$wpdb->prefix}ds_events 
+				$updated = $wpdb->query(
+					$wpdb->prepare(
+						"UPDATE {$wpdb->prefix}ds_events 
 					SET metadata = JSON_REMOVE(metadata, '$.customer_email')
 					WHERE JSON_EXTRACT(metadata, '$.order_id') = %d",
-					$order_id
-				) );
+						$order_id
+					)
+				);
 
 				if ( $updated > 0 ) {
 					$items_removed = true;
@@ -437,13 +459,13 @@ class Privacy_Manager {
 		$retention_days = get_option( 'ds_data_retention_days', self::DEFAULT_RETENTION_DAYS );
 
 		return array(
-			'gdpr_compliant' => true,
-			'ccpa_compliant' => true,
-			'ip_anonymization' => true,
-			'no_cookies' => true,
-			'no_fingerprinting' => true,
+			'gdpr_compliant'      => true,
+			'ccpa_compliant'      => true,
+			'ip_anonymization'    => true,
+			'no_cookies'          => true,
+			'no_fingerprinting'   => true,
 			'data_retention_days' => $retention_days,
-			'features' => array(
+			'features'            => array(
 				'IP addresses anonymized (last octet zeroed)',
 				'No personal data stored',
 				'No cookies used',

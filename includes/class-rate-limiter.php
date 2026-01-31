@@ -81,7 +81,7 @@ class Rate_Limiter {
 	 * @return bool True if request is allowed.
 	 */
 	public function is_allowed( ?string $ip_address = null, ?int $max_requests = null ): bool {
-		$ip = $ip_address ?? $this->get_client_ip();
+		$ip  = $ip_address ?? $this->get_client_ip();
 		$max = $max_requests ?? self::MAX_REQUESTS_PER_MINUTE;
 
 		// Anonymize IP for privacy
@@ -107,7 +107,7 @@ class Rate_Limiter {
 		foreach ( $headers as $header ) {
 			if ( ! empty( $_SERVER[ $header ] ) ) {
 				$ip = sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) );
-				
+
 				// If X-Forwarded-For, take the first IP
 				if ( strpos( $ip, ',' ) !== false ) {
 					$ip = trim( explode( ',', $ip )[0] );

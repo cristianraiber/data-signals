@@ -1,24 +1,21 @@
 <?php
 /**
  * Plugin Name: Data Signals
- * Plugin URI: https://github.com/raibercristian/data-signals
- * Description: Privacy-focused revenue analytics with WooCommerce and Easy Digital Downloads integration
+ * Plugin URI: https://example.com/data-signals
+ * Description: Privacy-focused revenue analytics for WordPress. Track which content, campaigns, and traffic sources generate revenue.
  * Version: 1.0.0
- * Author: Raiber Cristian
- * Author URI: https://raibercristian.com
+ * Author: Your Name
+ * Author URI: https://example.com
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: data-signals
- * Requires at least: 6.0
- * Requires PHP: 8.0
+ * Domain Path: /languages
  *
  * @package DataSignals
  */
 
-namespace DataSignals;
-
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+	exit; // Exit if accessed directly.
 }
 
 // Define plugin constants
@@ -26,88 +23,36 @@ define( 'DATA_SIGNALS_VERSION', '1.0.0' );
 define( 'DATA_SIGNALS_PLUGIN_FILE', __FILE__ );
 define( 'DATA_SIGNALS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'DATA_SIGNALS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define( 'DATA_SIGNALS_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 
 /**
- * Autoloader for plugin classes
- *
- * @param string $class Class name.
+ * Main plugin class
  */
-spl_autoload_register( function( $class ) {
-	$prefix   = 'DataSignals\\';
-	$base_dir = __DIR__ . '/includes/';
+class Data_Signals {
 
-	// Check if the class uses the namespace prefix
-	$len = strlen( $prefix );
-	if ( strncmp( $prefix, $class, $len ) !== 0 ) {
-		return;
-	}
-
-	// Get the relative class name
-	$relative_class = substr( $class, $len );
-
-	// Convert namespace separators to directory separators
-	$relative_class = str_replace( '\\', '/', $relative_class );
-
-	// Convert class name to file name (e.g., WooCommerce -> class-woocommerce.php)
-	$class_parts = explode( '/', $relative_class );
-	$class_name  = array_pop( $class_parts );
-	$class_name  = 'class-' . strtolower( str_replace( '_', '-', $class_name ) ) . '.php';
-
-	// Build the file path
-	if ( ! empty( $class_parts ) ) {
-		$file = $base_dir . implode( '/', $class_parts ) . '/' . $class_name;
-	} else {
-		$file = $base_dir . $class_name;
-	}
-
-	// If the file exists, require it
-	if ( file_exists( $file ) ) {
-		require $file;
-	}
-} );
-
-/**
- * Main Plugin Class
- */
-class Plugin {
 	/**
-	 * Single instance of the plugin
+	 * Single instance of the class
 	 *
-	 * @var Plugin
+	 * @var Data_Signals
 	 */
 	private static $instance = null;
 
 	/**
-	 * WooCommerce integration
+	 * Admin Dashboard instance
 	 *
-	 * @var Integrations\WooCommerce
+	 * @var DataSignals\Admin_Dashboard
 	 */
-	private $woocommerce;
+	private $admin_dashboard;
 
 	/**
-	 * EDD integration
+	 * Get singleton instance
 	 *
-	 * @var Integrations\EDD
+	 * @return Data_Signals
 	 */
-	private $edd;
-
-	/**
-	 * REST API
-	 *
-	 * @var REST_API
-	 */
-	private $rest_api;
-
-	/**
-	 * Get plugin instance
-	 *
-	 * @return Plugin
-	 */
-	public static function instance(): Plugin {
+	public static function instance() {
 		if ( is_null( self::$instance ) ) {
 			self::$instance = new self();
 		}
-
 		return self::$instance;
 	}
 
@@ -115,184 +60,412 @@ class Plugin {
 	 * Constructor
 	 */
 	private function __construct() {
-		$this->init_hooks();
+		$this->init();
+	}
+
+	/**
+	 * Initialize the plugin
+	 */
+	private function init() {
+		// Load autoloader
+		$this->load_autoloader();
+
+		// Initialize components
+		add_action( 'plugins_loaded', array( $this, 'init_components' ) );
+
+		// Activation/deactivation hooks
+		register_activation_hook( __FILE__, array( $this, 'activate' ) );
+		register_deactivation_hook( __FILE__, array( $this, 'deactivate' ) );
+	}
+
+	/**
+	 * Load autoloader
+	 */
+	private function load_autoloader() {
+		// Simple autoloader for plugin classes
+		spl_autoload_register( function ( $class ) {
+			$prefix = 'DataSignals\\';
+			$base_dir = DATA_SIGNALS_PLUGIN_DIR . 'includes/';
+
+			$len = strlen( $prefix );
+			if ( strncmp( $prefix, $class, $len ) !== 0 ) {
+				return;
+			}
+
+			$relative_class = substr( $class, $len );
+			$file = $base_dir . 'class-' . str_replace( '\\', '/', strtolower( str_replace( '_', '-', $relative_class ) ) ) . '.php';
+
+			if ( file_exists( $file ) ) {
+				require $file;
+			}
+		} );
+	}
+
+	/**
+	 * Initialize plugin components
+	 */
+	public function init_components() {
+		// Load text domain
+		load_plugin_textdomain( 'data-signals', false, dirname( DATA_SIGNALS_PLUGIN_BASENAME ) . '/languages' );
+
+		// Initialize admin dashboard
+		if ( is_admin() ) {
+			require_once DATA_SIGNALS_PLUGIN_DIR . 'includes/class-admin-dashboard.php';
+			$this->admin_dashboard = new \DataSignals\Admin_Dashboard(
+				DATA_SIGNALS_VERSION,
+				DATA_SIGNALS_PLUGIN_DIR,
+				DATA_SIGNALS_PLUGIN_URL
+			);
+			$this->admin_dashboard->init();
+		}
+
+		// Initialize REST API
+		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
+
+		// Load integrations
 		$this->load_integrations();
 	}
 
 	/**
-	 * Initialize WordPress hooks
+	 * Load integrations
 	 */
-	private function init_hooks(): void {
-		register_activation_hook( __FILE__, array( $this, 'activate' ) );
-		register_deactivation_hook( __FILE__, array( $this, 'deactivate' ) );
+	private function load_integrations() {
+		// Google Search Console integration
+		new \DataSignals\Integrations\Google_Search_Console();
+		
+		// GSC Settings page
+		if ( is_admin() ) {
+			new \DataSignals\Integrations\GSC_Settings();
+		}
 
-		add_action( 'plugins_loaded', array( $this, 'init' ) );
-	}
-
-	/**
-	 * Initialize plugin
-	 */
-	public function init(): void {
-		// Load text domain
-		load_plugin_textdomain( 'data-signals', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
-
-		// Initialize REST API
-		$this->rest_api = new REST_API();
-	}
-
-	/**
-	 * Load e-commerce integrations
-	 */
-	private function load_integrations(): void {
 		// WooCommerce integration
-		$this->woocommerce = new Integrations\WooCommerce();
+		if ( class_exists( 'WooCommerce' ) ) {
+			$wc_file = DATA_SIGNALS_PLUGIN_DIR . 'includes/integrations/class-woocommerce.php';
+			if ( file_exists( $wc_file ) ) {
+				require_once $wc_file;
+				// Initialize WooCommerce integration
+			}
+		}
 
 		// Easy Digital Downloads integration
-		$this->edd = new Integrations\EDD();
+		if ( class_exists( 'Easy_Digital_Downloads' ) ) {
+			$edd_file = DATA_SIGNALS_PLUGIN_DIR . 'includes/integrations/class-edd.php';
+			if ( file_exists( $edd_file ) ) {
+				require_once $edd_file;
+				// Initialize EDD integration
+			}
+		}
+	}
+
+	/**
+	 * Register REST API routes
+	 */
+	public function register_rest_routes() {
+		// Register REST API routes
+		// These will be implemented in separate task modules
+
+		// Example endpoint registration:
+		register_rest_route(
+			'data-signals/v1',
+			'/analytics',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_analytics_data' ),
+				'permission_callback' => array( $this, 'check_admin_permissions' ),
+			)
+		);
+
+		register_rest_route(
+			'data-signals/v1',
+			'/revenue-attribution',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_revenue_attribution' ),
+				'permission_callback' => array( $this, 'check_admin_permissions' ),
+			)
+		);
+
+		register_rest_route(
+			'data-signals/v1',
+			'/content-performance',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_content_performance' ),
+				'permission_callback' => array( $this, 'check_admin_permissions' ),
+			)
+		);
+
+		register_rest_route(
+			'data-signals/v1',
+			'/email-campaigns',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_email_campaigns' ),
+				'permission_callback' => array( $this, 'check_admin_permissions' ),
+			)
+		);
+
+		register_rest_route(
+			'data-signals/v1',
+			'/traffic-sources',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_traffic_sources' ),
+				'permission_callback' => array( $this, 'check_admin_permissions' ),
+			)
+		);
+
+		register_rest_route(
+			'data-signals/v1',
+			'/realtime',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_realtime_stats' ),
+				'permission_callback' => array( $this, 'check_admin_permissions' ),
+			)
+		);
+
+		register_rest_route(
+			'data-signals/v1',
+			'/revenue-trend',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_revenue_trend' ),
+				'permission_callback' => array( $this, 'check_admin_permissions' ),
+			)
+		);
+
+		register_rest_route(
+			'data-signals/v1',
+			'/conversion-funnel',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_conversion_funnel' ),
+				'permission_callback' => array( $this, 'check_admin_permissions' ),
+			)
+		);
+
+		register_rest_route(
+			'data-signals/v1',
+			'/email-journey/(?P<id>\d+)',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_email_journey' ),
+				'permission_callback' => array( $this, 'check_admin_permissions' ),
+			)
+		);
+
+		register_rest_route(
+			'data-signals/v1',
+			'/calculate-roas',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'calculate_roas' ),
+				'permission_callback' => array( $this, 'check_admin_permissions' ),
+			)
+		);
+	}
+
+	/**
+	 * Check admin permissions for API
+	 *
+	 * @return bool
+	 */
+	public function check_admin_permissions() {
+		return current_user_can( 'manage_options' );
+	}
+
+	/**
+	 * API Endpoint: Get analytics data
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function get_analytics_data( $request ) {
+		// TODO: Implement actual data fetching
+		return new \WP_REST_Response(
+			array(
+				'metrics'        => array(
+					'totalRevenue' => 12500.00,
+					'rpv'          => 2.50,
+					'conversions'  => 125,
+					'visits'       => 5000,
+				),
+				'trafficSources' => array(
+					array( 'source' => 'Organic', 'revenue' => 5000 ),
+					array( 'source' => 'Direct', 'revenue' => 3500 ),
+					array( 'source' => 'Paid', 'revenue' => 2500 ),
+					array( 'source' => 'Social', 'revenue' => 1000 ),
+					array( 'source' => 'Email', 'revenue' => 500 ),
+				),
+			),
+			200
+		);
+	}
+
+	/**
+	 * API Endpoint: Get revenue attribution
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function get_revenue_attribution( $request ) {
+		// TODO: Implement actual data fetching
+		return new \WP_REST_Response(
+			array(
+				'data' => array(
+					array(
+						'name'           => 'Google Organic',
+						'revenue'        => 5000,
+						'conversions'    => 50,
+						'avgOrderValue'  => 100,
+						'conversionRate' => 0.05,
+					),
+				),
+			),
+			200
+		);
+	}
+
+	/**
+	 * API Endpoint: Get content performance
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function get_content_performance( $request ) {
+		// TODO: Implement actual data fetching
+		return new \WP_REST_Response(
+			array(
+				'posts'               => array(),
+				'topRevenueThreshold' => 500,
+			),
+			200
+		);
+	}
+
+	/**
+	 * API Endpoint: Get email campaigns
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function get_email_campaigns( $request ) {
+		// TODO: Implement actual data fetching
+		return new \WP_REST_Response(
+			array(
+				'campaigns' => array(),
+				'allLinks'  => array(),
+			),
+			200
+		);
+	}
+
+	/**
+	 * API Endpoint: Get traffic sources
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function get_traffic_sources( $request ) {
+		// TODO: Implement actual data fetching
+		return new \WP_REST_Response(
+			array(
+				'sources' => array(),
+			),
+			200
+		);
+	}
+
+	/**
+	 * API Endpoint: Get realtime stats
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function get_realtime_stats( $request ) {
+		// TODO: Implement actual data fetching
+		return new \WP_REST_Response(
+			array(
+				'liveVisitors'      => 0,
+				'revenueToday'      => 0,
+				'conversionsToday'  => 0,
+				'recentConversions' => array(),
+				'activePages'       => array(),
+			),
+			200
+		);
+	}
+
+	/**
+	 * API Endpoint: Get revenue trend
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function get_revenue_trend( $request ) {
+		// TODO: Implement actual data fetching
+		return new \WP_REST_Response( array(), 200 );
+	}
+
+	/**
+	 * API Endpoint: Get conversion funnel
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function get_conversion_funnel( $request ) {
+		// TODO: Implement actual data fetching
+		return new \WP_REST_Response( array(), 200 );
+	}
+
+	/**
+	 * API Endpoint: Get email journey
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function get_email_journey( $request ) {
+		// TODO: Implement actual data fetching
+		return new \WP_REST_Response( array(), 200 );
+	}
+
+	/**
+	 * API Endpoint: Calculate ROAS
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function calculate_roas( $request ) {
+		// TODO: Implement actual calculation
+		return new \WP_REST_Response( array(), 200 );
 	}
 
 	/**
 	 * Plugin activation
 	 */
-	public function activate(): void {
+	public function activate() {
 		// Create database tables
-		$this->create_tables();
-
-		// Flush rewrite rules
+		// Set default options
+		// Schedule cron jobs
 		flush_rewrite_rules();
 	}
 
 	/**
 	 * Plugin deactivation
 	 */
-	public function deactivate(): void {
-		// Flush rewrite rules
+	public function deactivate() {
+		// Clean up scheduled events
 		flush_rewrite_rules();
 	}
-
-	/**
-	 * Create database tables
-	 */
-	private function create_tables(): void {
-		global $wpdb;
-
-		$charset_collate = $wpdb->get_charset_collate();
-
-		// Table: ds_pageviews
-		$table_pageviews = $wpdb->prefix . 'ds_pageviews';
-		$sql_pageviews   = "CREATE TABLE IF NOT EXISTS $table_pageviews (
-			id BIGINT UNSIGNED AUTO_INCREMENT,
-			session_id CHAR(32) NOT NULL,
-			page_id BIGINT UNSIGNED,
-			url VARCHAR(500),
-			referrer VARCHAR(500),
-			utm_source VARCHAR(100),
-			utm_medium VARCHAR(100),
-			utm_campaign VARCHAR(100),
-			utm_content VARCHAR(100),
-			utm_term VARCHAR(100),
-			country_code CHAR(2),
-			created_at DATETIME NOT NULL,
-			PRIMARY KEY (id),
-			INDEX idx_session (session_id, created_at),
-			INDEX idx_page (page_id, created_at),
-			INDEX idx_utm (utm_campaign, created_at)
-		) $charset_collate;";
-
-		// Table: ds_events
-		$table_events = $wpdb->prefix . 'ds_events';
-		$sql_events   = "CREATE TABLE IF NOT EXISTS $table_events (
-			id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-			session_id CHAR(32) NOT NULL,
-			event_type VARCHAR(50) NOT NULL,
-			event_value DECIMAL(10,2),
-			page_id BIGINT UNSIGNED,
-			product_id BIGINT UNSIGNED,
-			metadata JSON,
-			created_at DATETIME NOT NULL,
-			INDEX idx_session (session_id),
-			INDEX idx_type (event_type, created_at),
-			INDEX idx_product (product_id, created_at)
-		) $charset_collate;";
-
-		// Table: ds_sessions
-		$table_sessions = $wpdb->prefix . 'ds_sessions';
-		$sql_sessions   = "CREATE TABLE IF NOT EXISTS $table_sessions (
-			session_id CHAR(32) PRIMARY KEY,
-			first_page_id BIGINT UNSIGNED,
-			first_referrer VARCHAR(500),
-			utm_source VARCHAR(100),
-			utm_medium VARCHAR(100),
-			utm_campaign VARCHAR(100),
-			country_code CHAR(2),
-			total_pageviews SMALLINT UNSIGNED DEFAULT 1,
-			total_revenue DECIMAL(10,2) DEFAULT 0,
-			first_seen DATETIME NOT NULL,
-			last_seen DATETIME NOT NULL,
-			INDEX idx_campaign (utm_campaign),
-			INDEX idx_source (utm_source),
-			INDEX idx_revenue (total_revenue)
-		) $charset_collate;";
-
-		// Table: ds_revenue_attribution
-		$table_attribution = $wpdb->prefix . 'ds_revenue_attribution';
-		$sql_attribution   = "CREATE TABLE IF NOT EXISTS $table_attribution (
-			id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-			order_id BIGINT UNSIGNED NOT NULL,
-			session_id CHAR(32) NOT NULL,
-			page_id BIGINT UNSIGNED,
-			attribution_type ENUM('first_click', 'last_click', 'linear', 'time_decay') NOT NULL,
-			revenue_share DECIMAL(10,2) NOT NULL,
-			created_at DATETIME NOT NULL,
-			INDEX idx_order (order_id),
-			INDEX idx_session (session_id),
-			INDEX idx_page (page_id, created_at)
-		) $charset_collate;";
-
-		// Table: ds_email_clicks
-		$table_email = $wpdb->prefix . 'ds_email_clicks';
-		$sql_email   = "CREATE TABLE IF NOT EXISTS $table_email (
-			id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-			campaign_id VARCHAR(100) NOT NULL,
-			link_url VARCHAR(500) NOT NULL,
-			session_id CHAR(32),
-			clicked_at DATETIME NOT NULL,
-			converted BOOLEAN DEFAULT FALSE,
-			revenue DECIMAL(10,2) DEFAULT 0,
-			INDEX idx_campaign (campaign_id, clicked_at),
-			INDEX idx_session (session_id)
-		) $charset_collate;";
-
-		// Table: ds_aggregates
-		$table_aggregates = $wpdb->prefix . 'ds_aggregates';
-		$sql_aggregates   = "CREATE TABLE IF NOT EXISTS $table_aggregates (
-			id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-			date DATE NOT NULL,
-			metric_type VARCHAR(50) NOT NULL,
-			dimension VARCHAR(100),
-			dimension_value VARCHAR(255),
-			value DECIMAL(15,2) NOT NULL,
-			UNIQUE KEY unique_metric (date, metric_type, dimension, dimension_value),
-			INDEX idx_date (date, metric_type)
-		) $charset_collate;";
-
-		// Execute queries
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-		dbDelta( $sql_pageviews );
-		dbDelta( $sql_events );
-		dbDelta( $sql_sessions );
-		dbDelta( $sql_attribution );
-		dbDelta( $sql_email );
-		dbDelta( $sql_aggregates );
-
-		// Store database version
-		update_option( 'data_signals_db_version', DATA_SIGNALS_VERSION );
-	}
 }
 
-// Initialize plugin
+/**
+ * Initialize the plugin
+ */
 function data_signals() {
-	return Plugin::instance();
+	return Data_Signals::instance();
 }
 
+// Start the plugin
 data_signals();

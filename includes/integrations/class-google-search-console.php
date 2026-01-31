@@ -161,6 +161,19 @@ class Google_Search_Console {
 				},
 			)
 		);
+
+		// Disconnect endpoint
+		register_rest_route(
+			'data-signals/v1',
+			'/gsc/disconnect',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'handle_disconnect' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
+			)
+		);
 	}
 
 	/**
@@ -539,6 +552,27 @@ class Google_Search_Console {
 				'success'   => true,
 				'message'   => __( 'Keyword sync completed.', 'data-signals' ),
 				'last_sync' => get_option( 'ds_gsc_last_sync', 0 ),
+			),
+			200
+		);
+	}
+
+	/**
+	 * Handle disconnect request
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function handle_disconnect( WP_REST_Request $request ): WP_REST_Response {
+		$this->oauth_manager->delete_tokens( self::PROVIDER );
+		
+		// Clear scheduled sync
+		wp_clear_scheduled_hook( 'ds_gsc_daily_sync' );
+
+		return new WP_REST_Response(
+			array(
+				'success' => true,
+				'message' => __( 'Disconnected from Google Search Console.', 'data-signals' ),
 			),
 			200
 		);
