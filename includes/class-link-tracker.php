@@ -292,6 +292,12 @@ class Link_Tracker {
 	private static function build_date_filter( $field, $date_range ) {
 		global $wpdb;
 
+		// Whitelist valid field names to prevent SQL injection
+		$allowed_fields = array( 'clicked_at', 'created_at', 'timestamp', 'date', 'first_seen', 'last_seen' );
+		if ( ! in_array( $field, $allowed_fields, true ) ) {
+			return ''; // Invalid field, return empty filter
+		}
+
 		$filter = '';
 
 		if ( ! empty( $date_range['start'] ) ) {
