@@ -1,42 +1,29 @@
-# WordPress
-wp-config.php
-wp-content/uploads/
-wp-content/blogs.dir/
-wp-content/upgrade/
-wp-content/backup-db/
-wp-content/cache/
-wp-content/w3tc-config/
-
-# Node
+# Node modules
 node_modules/
-npm-debug.log
-yarn-error.log
-package-lock.json
-yarn.lock
 
-# Build
-/build/
-/dist/
-*.min.js
-*.min.css
-*.map
+# Build output
+assets/build/
+
+# Composer
+vendor/
+
+# WordPress
+*.log
+.htaccess
 
 # IDE
 .vscode/
 .idea/
-*.sublime-project
-*.sublime-workspace
+*.sublime-*
+
+# OS
 .DS_Store
 Thumbs.db
 
-# Logs
-*.log
-error_log
+# NPM
+package-lock.json
+yarn.lock
 
 # Environment
 .env
 .env.local
-
-# Composer
-/vendor/
-composer.lock
