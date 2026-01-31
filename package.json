@@ -1,0 +1,30 @@
+{
+  "name": "data-signals-dashboard",
+  "version": "1.0.0",
+  "description": "React-based analytics dashboard for Data Signals",
+  "scripts": {
+    "build": "wp-scripts build assets/src/js/index.jsx --output-path=assets/build",
+    "start": "wp-scripts start assets/src/js/index.jsx --output-path=assets/build",
+    "lint": "wp-scripts lint-js",
+    "format": "wp-scripts format"
+  },
+  "dependencies": {
+    "@wordpress/element": "^6.12.0",
+    "@wordpress/api-fetch": "^7.12.0",
+    "@wordpress/components": "^28.12.0",
+    "@wordpress/i18n": "^5.12.0",
+    "recharts": "^2.12.0",
+    "zustand": "^4.5.0",
+    "date-fns": "^3.3.0"
+  },
+  "devDependencies": {
+    "@wordpress/scripts": "^27.5.0"
+  },
+  "keywords": [
+    "wordpress",
+    "analytics",
+    "react"
+  ],
+  "author": "Data Signals",
+  "license": "GPL-2.0-or-later"
+}
