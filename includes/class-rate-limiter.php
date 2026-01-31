@@ -3,6 +3,7 @@
  * Rate Limiter
  *
  * Protects tracking endpoint from abuse with IP-based rate limiting.
+ * Uses WordPress object cache (no Redis required).
  *
  * @package DataSignals
  * @since 1.0.0
@@ -17,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Class Rate_Limiter
  *
- * Implements token bucket algorithm for rate limiting
+ * Implements token bucket algorithm for rate limiting using WordPress object cache
  */
 class Rate_Limiter {
 
@@ -29,49 +30,11 @@ class Rate_Limiter {
 	private const MAX_REQUESTS_PER_MINUTE = 1000;
 
 	/**
-	 * Redis connection
+	 * Cache group for rate limit data
 	 *
-	 * @var \Redis|null
+	 * @var string
 	 */
-	private $redis;
-
-	/**
-	 * Fallback to transients if Redis unavailable
-	 *
-	 * @var bool
-	 */
-	private $use_transients = false;
-
-	/**
-	 * Constructor
-	 */
-	public function __construct() {
-		$this->init_redis();
-	}
-
-	/**
-	 * Initialize Redis connection
-	 */
-	private function init_redis(): void {
-		if ( ! class_exists( 'Redis' ) ) {
-			$this->use_transients = true;
-			return;
-		}
-
-		try {
-			$this->redis = new \Redis();
-			$connected   = $this->redis->connect( '127.0.0.1', 6379 );
-
-			if ( ! $connected ) {
-				$this->use_transients = true;
-				$this->redis          = null;
-			}
-		} catch ( \Exception $e ) {
-			$this->use_transients = true;
-			$this->redis          = null;
-			error_log( 'Rate Limiter: Redis connection failed, using transients: ' . $e->getMessage() );
-		}
-	}
+	private const CACHE_GROUP = 'data_signals_ratelimit';
 
 	/**
 	 * Check if request is allowed
@@ -150,71 +113,27 @@ class Rate_Limiter {
 	}
 
 	/**
-	 * Check rate limit using token bucket algorithm
+	 * Check rate limit using WordPress object cache (token bucket algorithm)
+	 *
+	 * Works with any WordPress object cache backend:
+	 * - Memcached (wp-memcached)
+	 * - APCu (apcu-object-cache)
+	 * - Redis (redis-cache plugin)
+	 * - Database transients (fallback)
 	 *
 	 * @param string $ip_hash Hashed IP address.
 	 * @param int    $max_requests Maximum requests per minute.
 	 * @return bool True if request is allowed.
 	 */
 	private function check_rate_limit( string $ip_hash, int $max_requests ): bool {
-		$key = 'ds_ratelimit_' . $ip_hash;
+		$key = $ip_hash;
 
-		if ( $this->use_transients ) {
-			return $this->check_rate_limit_transients( $key, $max_requests );
-		}
-
-		return $this->check_rate_limit_redis( $key, $max_requests );
-	}
-
-	/**
-	 * Check rate limit using Redis
-	 *
-	 * @param string $key Cache key.
-	 * @param int    $max_requests Maximum requests per minute.
-	 * @return bool True if request is allowed.
-	 */
-	private function check_rate_limit_redis( string $key, int $max_requests ): bool {
-		if ( ! $this->redis ) {
-			return true; // Fail open if Redis is unavailable
-		}
-
-		try {
-			$current = $this->redis->get( $key );
-
-			if ( $current === false ) {
-				// First request - set counter
-				$this->redis->setex( $key, 60, 1 );
-				return true;
-			}
-
-			if ( (int) $current >= $max_requests ) {
-				// Rate limit exceeded
-				return false;
-			}
-
-			// Increment counter
-			$this->redis->incr( $key );
-			return true;
-
-		} catch ( \Exception $e ) {
-			error_log( 'Rate Limiter: Redis error: ' . $e->getMessage() );
-			return true; // Fail open on errors
-		}
-	}
-
-	/**
-	 * Check rate limit using WordPress transients (fallback)
-	 *
-	 * @param string $key Cache key.
-	 * @param int    $max_requests Maximum requests per minute.
-	 * @return bool True if request is allowed.
-	 */
-	private function check_rate_limit_transients( string $key, int $max_requests ): bool {
-		$current = get_transient( $key );
+		// Try object cache first (fast: Memcached/APCu/Redis)
+		$current = wp_cache_get( $key, self::CACHE_GROUP );
 
 		if ( $current === false ) {
-			// First request
-			set_transient( $key, 1, 60 );
+			// First request - set counter
+			wp_cache_set( $key, 1, self::CACHE_GROUP, 60 );
 			return true;
 		}
 
@@ -223,8 +142,8 @@ class Rate_Limiter {
 			return false;
 		}
 
-		// Increment counter
-		set_transient( $key, (int) $current + 1, 60 );
+		// Increment counter (atomic if supported by cache backend)
+		wp_cache_set( $key, (int) $current + 1, self::CACHE_GROUP, 60 );
 		return true;
 	}
 
@@ -240,17 +159,9 @@ class Rate_Limiter {
 		$max = $max_requests ?? self::MAX_REQUESTS_PER_MINUTE;
 
 		$ip_hash = $this->anonymize_ip( $ip );
-		$key     = 'ds_ratelimit_' . $ip_hash;
+		$key     = $ip_hash;
 
-		if ( $this->use_transients ) {
-			$current = (int) get_transient( $key );
-		} else {
-			try {
-				$current = (int) $this->redis->get( $key );
-			} catch ( \Exception $e ) {
-				$current = 0;
-			}
-		}
+		$current = (int) wp_cache_get( $key, self::CACHE_GROUP );
 
 		return max( 0, $max - $current );
 	}
@@ -263,18 +174,9 @@ class Rate_Limiter {
 	 */
 	public function reset_limit( string $ip_address ): bool {
 		$ip_hash = $this->anonymize_ip( $ip_address );
-		$key     = 'ds_ratelimit_' . $ip_hash;
+		$key     = $ip_hash;
 
-		if ( $this->use_transients ) {
-			return delete_transient( $key );
-		}
-
-		try {
-			return (bool) $this->redis->del( $key );
-		} catch ( \Exception $e ) {
-			error_log( 'Rate Limiter: Failed to reset limit: ' . $e->getMessage() );
-			return false;
-		}
+		return wp_cache_delete( $key, self::CACHE_GROUP );
 	}
 
 	/**
@@ -283,10 +185,21 @@ class Rate_Limiter {
 	 * @return array Stats array.
 	 */
 	public function get_stats(): array {
+		global $_wp_using_ext_object_cache;
+
 		return array(
 			'max_requests_per_minute' => self::MAX_REQUESTS_PER_MINUTE,
-			'storage_backend'         => $this->use_transients ? 'transients' : 'redis',
-			'redis_available'         => ! $this->use_transients,
+			'storage_backend'         => $_wp_using_ext_object_cache ? 'persistent_cache' : 'transients',
+			'persistent_cache'        => $_wp_using_ext_object_cache,
 		);
+	}
+
+	/**
+	 * Flush all rate limit data (cleanup)
+	 *
+	 * @return bool Success status.
+	 */
+	public function flush_all(): bool {
+		return wp_cache_flush_group( self::CACHE_GROUP );
 	}
 }

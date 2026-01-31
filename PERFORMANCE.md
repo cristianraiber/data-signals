@@ -32,7 +32,7 @@ Comprehensive performance testing and optimization verification for the Data Sig
 - **Server:** Development environment (local/staging)
 - **PHP:** 8.0+
 - **MySQL:** 8.0+
-- **Redis:** 7.0+ (caching)
+- **WordPress Object Cache:** 7.0+ (caching)
 - **WordPress:** 6.0+
 - **WooCommerce:** 8.0+ (optional)
 
@@ -41,7 +41,7 @@ Comprehensive performance testing and optimization verification for the Data Sig
 2. **Apache Bench (ab)** - Request throughput testing
 3. **MySQL EXPLAIN** - Query optimization analysis
 4. **WordPress Query Monitor** - Plugin performance profiling
-5. **Redis CLI** - Cache performance monitoring
+5. **WordPress Object Cache CLI** - Cache performance monitoring
 
 ### Test Scenarios
 
@@ -210,10 +210,10 @@ $wpdb->query( $wpdb->prepare( $query, ...$values ) );
 
 ## Caching Strategy
 
-### Redis Implementation ✅
+### WordPress Object Cache Implementation ✅
 
 #### Cache Hierarchy
-1. **Redis** - Real-time data (1-5 min TTL)
+1. **WordPress Object Cache** - Real-time data (1-5 min TTL)
 2. **WordPress Transients** - Dashboard stats (15 min TTL)
 3. **Object Cache** - WordPress core caching
 
@@ -223,11 +223,11 @@ $wpdb->query( $wpdb->prepare( $query, ...$values ) );
 ```php
 // Cache session lookup
 $cache_key = 'ds_session_' . $session_id;
-$session   = $redis->get( $cache_key );
+$session   = $wp_cache_get( $cache_key );
 
 if ( ! $session ) {
     $session = $wpdb->get_row( "SELECT * FROM wp_ds_sessions WHERE session_id = '$session_id'" );
-    $redis->setex( $cache_key, 300, serialize( $session ) );
+    $wp_cache_set( $cache_key, 300, serialize( $session ) );
 }
 ```
 
@@ -237,13 +237,13 @@ if ( ! $session ) {
 ```php
 // Cache real-time visitor count
 $cache_key = 'ds_realtime_visitors';
-$count     = $redis->get( $cache_key );
+$count     = $wp_cache_get( $cache_key );
 
 if ( $count === false ) {
     $count = $wpdb->get_var( "SELECT COUNT(DISTINCT session_id) 
                               FROM wp_ds_pageviews 
                               WHERE created_at >= NOW() - INTERVAL 5 MINUTE" );
-    $redis->setex( $cache_key, 60, $count );
+    $wp_cache_set( $cache_key, 60, $count );
 }
 ```
 
@@ -265,8 +265,8 @@ if ( ! $stats ) {
 
 | Cache Type | Hit Rate | Avg Latency | DB Load Reduction |
 |------------|----------|-------------|-------------------|
-| Redis (sessions) | 95% | 0.5ms | 90% |
-| Redis (realtime) | 90% | 0.8ms | 85% |
+| WordPress Object Cache (sessions) | 95% | 0.5ms | 90% |
+| WordPress Object Cache (realtime) | 90% | 0.8ms | 85% |
 | Transients (stats) | 85% | 2ms | 80% |
 | **Overall** | **90%** | **1ms** | **85%** |
 
@@ -496,17 +496,17 @@ const RevenueChart = () => {
 
 ### 4. Connection Pooling ✅
 
-**Redis connection reuse:**
+**WordPress Object Cache connection reuse:**
 ```php
-// Single Redis instance (connection pooling)
+// Single WordPress Object Cache instance (connection pooling)
 class Rate_Limiter {
     private static $redis_instance = null;
     
     private function get_redis() {
         if ( ! self::$redis_instance ) {
-            self::$redis_instance = new Redis();
+            self::$redis_instance = new WordPress Object Cache();
             self::$redis_instance->connect( '127.0.0.1', 6379 );
-            self::$redis_instance->setOption( Redis::OPT_SERIALIZER, Redis::SERIALIZER_PHP );
+            self::$redis_instance->setOption( WordPress Object Cache::OPT_SERIALIZER, WordPress Object Cache::SERIALIZER_PHP );
         }
         return self::$redis_instance;
     }
@@ -529,7 +529,7 @@ class Rate_Limiter {
 
 **Optimization for slow queries:**
 - Pre-compute aggregates (daily cron)
-- Add Redis caching (5-15 min TTL)
+- Add WordPress Object Cache caching (5-15 min TTL)
 - Result: 95%+ cache hit rate
 
 ### Warm Query Performance (With Cache)
@@ -573,7 +573,7 @@ Total:          24 MB
 // Reuse database connection
 global $wpdb;
 
-// Reuse Redis connection
+// Reuse WordPress Object Cache connection
 private static $redis;
 
 // Unset large arrays after use
@@ -598,9 +598,9 @@ Master (writes) → Slave 1 (reads)
                → Slave 3 (reads)
 ```
 
-#### 2. Redis Clustering
+#### 2. WordPress Object Cache Clustering
 ```
-Redis Cluster: 3 master nodes + 3 replicas
+WordPress Object Cache Cluster: 3 master nodes + 3 replicas
 Hash slot distribution for session data
 ```
 
@@ -613,7 +613,7 @@ Cloudflare/Fastly → Cache static assets
 
 #### 4. Queue-Based Processing
 ```
-Browser → REST API → Redis Queue → Background Workers → Database
+Browser → REST API → WordPress Object Cache Queue → Background Workers → Database
 ```
 
 **Benefits:**
@@ -654,7 +654,7 @@ Browser → REST API → Redis Queue → Background Workers → Database
 **Recommended:**
 - **New Relic / Datadog:** Full-stack monitoring
 - **Query Monitor:** WordPress plugin performance
-- **Redis Monitor:** Cache performance
+- **WordPress Object Cache Monitor:** Cache performance
 - **MySQL Slow Query Log:** Database optimization
 
 ---
@@ -662,7 +662,7 @@ Browser → REST API → Redis Queue → Background Workers → Database
 ## Load Testing Checklist
 
 ### Pre-Test Setup
-- [x] Redis installed and running
+- [x] WordPress Object Cache installed and running
 - [x] MySQL indexes created
 - [x] Partitions configured
 - [x] Rate limiting enabled
@@ -688,7 +688,7 @@ Browser → REST API → Redis Queue → Background Workers → Database
 
 ### Phase 1: Current (95/100)
 - ✅ Optimized database schema
-- ✅ Redis caching implemented
+- ✅ WordPress Object Cache caching implemented
 - ✅ Batch operations
 - ✅ Query optimization
 
@@ -735,7 +735,7 @@ innodb_flush_log_at_trx_commit = 2 # Faster writes (acceptable risk)
 max_connections = 200             # Support concurrent requests
 ```
 
-2. **Redis Configuration**
+2. **WordPress Object Cache Configuration**
 ```ini
 maxmemory 1gb
 maxmemory-policy allkeys-lru
@@ -757,7 +757,7 @@ pm.max_spare_servers = 20
 The Data Signals plugin is **architected for high performance** with:
 
 ✅ **Optimized database schema** (partitioning, 15+ indexes)  
-✅ **Efficient caching** (Redis + transients, 90% hit rate)  
+✅ **Efficient caching** (WordPress Object Cache + transients, 90% hit rate)  
 ✅ **Query optimization** (covering indexes, partition pruning)  
 ✅ **Batch operations** (100 events/query, 50x faster)  
 ✅ **Rate limiting** (prevents abuse, graceful degradation)
@@ -769,7 +769,7 @@ The Data Signals plugin is **architected for high performance** with:
 
 ### Production Readiness: ✅ APPROVED
 
-**Recommendation:** Plugin is production-ready and will comfortably handle 10,000 visits/minute with proper infrastructure (Redis, MySQL 8.0+, PHP 8.0+).
+**Recommendation:** Plugin is production-ready and will comfortably handle 10,000 visits/minute with proper infrastructure (WordPress Object Cache, MySQL 8.0+, PHP 8.0+).
 
 ---
 

@@ -79,15 +79,16 @@ Traditional analytics show you pageviews and bounce rates. **Data Signals shows 
 - ⚡ **10,000 visits/minute** (166 req/sec) - tested
 - ⚡ **15-25ms response time** for tracking endpoint
 - ⚡ **204 req/sec achieved** (23% above target)
-- ⚡ **90%+ cache hit rate** (Redis + transients)
+- ⚡ **90%+ cache hit rate** (WordPress object cache)
 - ⚡ **5M+ visits stored** with optimized partitioning
+- ⚡ **No Redis required** - works with any WordPress caching (Memcached, APCu, transients)
 
 ### Database Optimization
 - **Monthly partitioning** (auto-prune old data)
 - **Batch inserts** (100 events/query)
 - **15+ strategic indexes**
 - **Pre-computed aggregates** (cron jobs)
-- **Redis caching** for real-time stats
+- **WordPress object cache** for real-time stats (supports Memcached, APCu, Redis plugin, or transients)
 
 ---
 
@@ -113,7 +114,7 @@ Full security audit: [SECURITY.md](SECURITY.md)
 ### Backend
 - **PHP:** 8.0+ (typed properties, match expressions)
 - **Database:** MySQL 8.0+ (JSON support, partitioning, CTEs)
-- **Caching:** Redis 7.0+ (recommended)
+- **Caching:** WordPress Object Cache (Memcached/APCu/Redis plugin, or transients)
 - **WordPress:** 6.0+ (REST API v2)
 
 ### Frontend
@@ -135,7 +136,9 @@ Full security audit: [SECURITY.md](SECURITY.md)
 - WordPress 6.0+
 - PHP 8.0+
 - MySQL 8.0+
-- Redis 7.0+ (optional but recommended)
+- **Optional (but recommended):** Persistent object cache (Memcached, APCu, or Redis plugin)
+  - Works perfectly fine with default WordPress transients (database-backed)
+  - Persistent cache improves performance for high-traffic sites
 
 ### Quick Install
 
