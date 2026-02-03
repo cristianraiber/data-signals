@@ -377,6 +377,23 @@ class Rest {
     // =========================================================================
     
     public function track_event(WP_REST_Request $request): WP_REST_Response {
+        // Anti-abuse validation
+        $validation = Rate_Limiter::validate_event_request($request);
+        
+        if (!$validation['valid']) {
+            $response = new WP_REST_Response([
+                'success' => false,
+                'error' => $validation['error'],
+            ], $validation['code']);
+            
+            // Add Retry-After header for rate limiting
+            if (isset($validation['retry_after'])) {
+                $response->header('Retry-After', $validation['retry_after']);
+            }
+            
+            return $response;
+        }
+        
         $result = Event_Tracker::track_from_request($request);
         $status = $result['success'] ? 200 : 400;
         return new WP_REST_Response($result, $status);
