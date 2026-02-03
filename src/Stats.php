@@ -190,4 +190,131 @@ class Stats {
             $start, $end
         ));
     }
+    
+    /**
+     * Get device stats
+     */
+    public function get_devices(string $start, string $end, string $group_by = 'device_type', int $limit = 20): array {
+        global $wpdb;
+        
+        $valid_groups = ['device_type', 'browser', 'os'];
+        if (!in_array($group_by, $valid_groups)) {
+            $group_by = 'device_type';
+        }
+        
+        $results = $wpdb->get_results($wpdb->prepare(
+            "SELECT {$group_by} AS label, SUM(visitors) AS visitors, SUM(pageviews) AS pageviews
+             FROM {$wpdb->prefix}ds_device_stats
+             WHERE date >= %s AND date <= %s
+             GROUP BY {$group_by}
+             ORDER BY visitors DESC
+             LIMIT %d",
+            $start, $end, $limit
+        ));
+        
+        return array_map(function($row) {
+            $row->visitors = (int) $row->visitors;
+            $row->pageviews = (int) $row->pageviews;
+            return $row;
+        }, $results);
+    }
+    
+    /**
+     * Get device totals by type
+     */
+    public function get_device_totals(string $start, string $end): object {
+        global $wpdb;
+        
+        $result = $wpdb->get_row($wpdb->prepare(
+            "SELECT 
+                SUM(CASE WHEN device_type = 'desktop' THEN visitors ELSE 0 END) AS desktop,
+                SUM(CASE WHEN device_type = 'mobile' THEN visitors ELSE 0 END) AS mobile,
+                SUM(CASE WHEN device_type = 'tablet' THEN visitors ELSE 0 END) AS tablet,
+                SUM(visitors) AS total
+             FROM {$wpdb->prefix}ds_device_stats
+             WHERE date >= %s AND date <= %s",
+            $start, $end
+        ));
+        
+        if (!$result) {
+            return (object) ['desktop' => 0, 'mobile' => 0, 'tablet' => 0, 'total' => 0];
+        }
+        
+        return (object) [
+            'desktop' => (int) $result->desktop,
+            'mobile'  => (int) $result->mobile,
+            'tablet'  => (int) $result->tablet,
+            'total'   => (int) $result->total,
+        ];
+    }
+    
+    /**
+     * Get geographic stats
+     */
+    public function get_countries(string $start, string $end, int $limit = 20): array {
+        global $wpdb;
+        
+        $results = $wpdb->get_results($wpdb->prepare(
+            "SELECT country_code, country_name, SUM(visitors) AS visitors, SUM(pageviews) AS pageviews
+             FROM {$wpdb->prefix}ds_geo_stats
+             WHERE date >= %s AND date <= %s AND country_code != ''
+             GROUP BY country_code
+             ORDER BY visitors DESC
+             LIMIT %d",
+            $start, $end, $limit
+        ));
+        
+        return array_map(function($row) {
+            $row->visitors = (int) $row->visitors;
+            $row->pageviews = (int) $row->pageviews;
+            return $row;
+        }, $results);
+    }
+    
+    /**
+     * Get campaign stats
+     */
+    public function get_campaigns(string $start, string $end, int $limit = 20): array {
+        global $wpdb;
+        
+        $results = $wpdb->get_results($wpdb->prepare(
+            "SELECT utm_source, utm_medium, utm_campaign, utm_content, utm_term,
+                    SUM(visitors) AS visitors, SUM(pageviews) AS pageviews
+             FROM {$wpdb->prefix}ds_campaign_stats
+             WHERE date >= %s AND date <= %s AND (utm_source != '' OR utm_campaign != '')
+             GROUP BY utm_source, utm_medium, utm_campaign, utm_content, utm_term
+             ORDER BY visitors DESC
+             LIMIT %d",
+            $start, $end, $limit
+        ));
+        
+        return array_map(function($row) {
+            $row->visitors = (int) $row->visitors;
+            $row->pageviews = (int) $row->pageviews;
+            return $row;
+        }, $results);
+    }
+    
+    /**
+     * Get campaign totals by source
+     */
+    public function get_campaign_sources(string $start, string $end, int $limit = 10): array {
+        global $wpdb;
+        
+        $results = $wpdb->get_results($wpdb->prepare(
+            "SELECT utm_source AS source, SUM(visitors) AS visitors, SUM(pageviews) AS pageviews
+             FROM {$wpdb->prefix}ds_campaign_stats
+             WHERE date >= %s AND date <= %s AND utm_source != ''
+             GROUP BY utm_source
+             ORDER BY visitors DESC
+             LIMIT %d",
+            $start, $end, $limit
+        ));
+        
+        return array_map(function($row) {
+            $row->visitors = (int) $row->visitors;
+            $row->pageviews = (int) $row->pageviews;
+            return $row;
+        }, $results);
+    }
 }

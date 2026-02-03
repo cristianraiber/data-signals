@@ -56,6 +56,40 @@ class Rest {
             ],
         ]);
         
+        register_rest_route($namespace, '/devices', [
+            'methods' => 'GET',
+            'callback' => [$this, 'get_devices'],
+            'permission_callback' => [$this, 'check_permission'],
+            'args' => [
+                'start_date' => ['validate_callback' => [$this, 'validate_date']],
+                'end_date' => ['validate_callback' => [$this, 'validate_date']],
+                'group_by' => ['default' => 'device_type'],
+                'limit' => ['default' => 20, 'sanitize_callback' => 'absint'],
+            ],
+        ]);
+        
+        register_rest_route($namespace, '/countries', [
+            'methods' => 'GET',
+            'callback' => [$this, 'get_countries'],
+            'permission_callback' => [$this, 'check_permission'],
+            'args' => [
+                'start_date' => ['validate_callback' => [$this, 'validate_date']],
+                'end_date' => ['validate_callback' => [$this, 'validate_date']],
+                'limit' => ['default' => 20, 'sanitize_callback' => 'absint'],
+            ],
+        ]);
+        
+        register_rest_route($namespace, '/campaigns', [
+            'methods' => 'GET',
+            'callback' => [$this, 'get_campaigns'],
+            'permission_callback' => [$this, 'check_permission'],
+            'args' => [
+                'start_date' => ['validate_callback' => [$this, 'validate_date']],
+                'end_date' => ['validate_callback' => [$this, 'validate_date']],
+                'limit' => ['default' => 20, 'sanitize_callback' => 'absint'],
+            ],
+        ]);
+        
         register_rest_route($namespace, '/realtime', [
             'methods' => 'GET',
             'callback' => [$this, 'get_realtime'],
@@ -64,11 +98,29 @@ class Rest {
                 'since' => ['default' => '-1 hour'],
             ],
         ]);
+        
+        // Settings endpoints
+        register_rest_route($namespace, '/settings', [
+            [
+                'methods' => 'GET',
+                'callback' => [$this, 'get_settings'],
+                'permission_callback' => [$this, 'check_admin_permission'],
+            ],
+            [
+                'methods' => 'POST',
+                'callback' => [$this, 'update_settings'],
+                'permission_callback' => [$this, 'check_admin_permission'],
+            ],
+        ]);
     }
     
     public function check_permission(): bool {
         $settings = get_settings();
         return $settings['is_dashboard_public'] || current_user_can('view_data_signals');
+    }
+    
+    public function check_admin_permission(): bool {
+        return current_user_can('manage_options');
     }
     
     public function validate_date($param): bool {
@@ -136,8 +188,75 @@ class Rest {
         return new WP_REST_Response($result);
     }
     
+    public function get_devices(WP_REST_Request $request): WP_REST_Response {
+        [$start, $end] = $this->get_date_params($request);
+        $group_by = $request->get_param('group_by');
+        $limit = min($request->get_param('limit'), 50);
+        
+        $stats = new Stats();
+        $result = [
+            'items' => $stats->get_devices($start, $end, $group_by, $limit),
+            'totals' => $stats->get_device_totals($start, $end),
+        ];
+        
+        return new WP_REST_Response($result);
+    }
+    
+    public function get_countries(WP_REST_Request $request): WP_REST_Response {
+        [$start, $end] = $this->get_date_params($request);
+        $limit = min($request->get_param('limit'), 100);
+        
+        $stats = new Stats();
+        $result = [
+            'items' => $stats->get_countries($start, $end, $limit),
+        ];
+        
+        return new WP_REST_Response($result);
+    }
+    
+    public function get_campaigns(WP_REST_Request $request): WP_REST_Response {
+        [$start, $end] = $this->get_date_params($request);
+        $limit = min($request->get_param('limit'), 100);
+        
+        $stats = new Stats();
+        $result = [
+            'items' => $stats->get_campaigns($start, $end, $limit),
+            'sources' => $stats->get_campaign_sources($start, $end, 10),
+        ];
+        
+        return new WP_REST_Response($result);
+    }
+    
     public function get_realtime(WP_REST_Request $request): WP_REST_Response {
         $since = $request->get_param('since');
         return new WP_REST_Response(['count' => get_realtime_pageview_count($since)]);
+    }
+    
+    public function get_settings(WP_REST_Request $request): WP_REST_Response {
+        return new WP_REST_Response(get_settings());
+    }
+    
+    public function update_settings(WP_REST_Request $request): WP_REST_Response {
+        $data = $request->get_json_params();
+        $settings = get_settings();
+        
+        $allowed = [
+            'is_dashboard_public',
+            'exclude_user_roles',
+            'prune_data_after_months',
+            'default_view',
+            'use_cookie',
+            'cookie_notice_script',
+        ];
+        
+        foreach ($allowed as $key) {
+            if (isset($data[$key])) {
+                $settings[$key] = $data[$key];
+            }
+        }
+        
+        update_option('data_signals_settings', $settings);
+        
+        return new WP_REST_Response(['success' => true, 'settings' => $settings]);
     }
 }

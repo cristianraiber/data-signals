@@ -1,33 +1,24 @@
 <?php
 /**
- * Dashboard view template
- * 
- * @var object $totals
- * @var object $prev_totals
- * @var array $chart_data
- * @var array $pages
- * @var int $pages_count
- * @var array $referrers
- * @var int $referrers_count
- * @var int $realtime
- * @var array $presets
- * @var string $range
- * @var \DateTimeImmutable $date_start
- * @var \DateTimeImmutable $date_end
+ * Dashboard view template with tabs
  */
 
 defined('ABSPATH') or exit;
 
-$date_format = get_option('date_format', 'Y-m-d');
 $dashboard_url = admin_url('admin.php?page=data-signals');
 
-// Calculate percentage changes
-$visitors_change = $prev_totals->visitors > 0 
-    ? round((($totals->visitors - $prev_totals->visitors) / $prev_totals->visitors) * 100, 1) 
-    : 0;
-$pageviews_change = $prev_totals->pageviews > 0 
-    ? round((($totals->pageviews - $prev_totals->pageviews) / $prev_totals->pageviews) * 100, 1) 
-    : 0;
+// Helper function for percentage
+function ds_percent($value, $total) {
+    if ($total == 0) return '0%';
+    return round(($value / $total) * 100, 1) . '%';
+}
+
+// Helper for country flag emoji
+function ds_flag($code) {
+    if (empty($code) || strlen($code) !== 2) return '🌍';
+    $code = strtoupper($code);
+    return implode('', array_map(fn($c) => mb_chr(ord($c) - ord('A') + 0x1F1E6), str_split($code)));
+}
 ?>
 
 <style>
@@ -60,15 +51,38 @@ $pageviews_change = $prev_totals->pageviews > 0
     gap: 12px;
 }
 
-.ds-header-bar .ds-icon {
-    font-size: 28px;
-}
-
+.ds-header-bar .ds-icon { font-size: 28px; }
 .ds-header-bar .ds-title {
     font-size: 24px;
     font-weight: 600;
     color: var(--ds-text);
     margin: 0;
+}
+
+.ds-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    background: #fff;
+    border-bottom: 1px solid var(--ds-border);
+    padding: 0 20px;
+}
+
+.ds-tabs a {
+    padding: 14px 20px;
+    text-decoration: none;
+    color: var(--ds-text-muted);
+    font-size: 14px;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.15s;
+}
+
+.ds-tabs a:hover { color: var(--ds-text); }
+.ds-tabs a.active {
+    color: var(--ds-primary);
+    border-bottom-color: var(--ds-primary);
 }
 
 .ds-content {
@@ -105,10 +119,7 @@ $pageviews_change = $prev_totals->pageviews > 0
     animation: ds-pulse 2s infinite;
 }
 
-@keyframes ds-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
+@keyframes ds-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
 .ds-date-picker {
     display: flex;
@@ -117,7 +128,8 @@ $pageviews_change = $prev_totals->pageviews > 0
     flex-wrap: wrap;
 }
 
-.ds-date-picker select {
+.ds-date-picker select,
+.ds-date-picker input[type="date"] {
     padding: 8px 12px;
     border: 1px solid #8c8f94;
     border-radius: 4px;
@@ -126,28 +138,16 @@ $pageviews_change = $prev_totals->pageviews > 0
     background: #fff;
 }
 
-.ds-date-picker select:focus {
+.ds-date-picker select:focus,
+.ds-date-picker input[type="date"]:focus {
     border-color: var(--ds-primary);
     box-shadow: 0 0 0 1px var(--ds-primary);
     outline: none;
 }
 
-.ds-date-picker input[type="date"] {
-    padding: 8px 12px;
-    border: 1px solid #8c8f94;
-    border-radius: 4px;
-    font-size: 14px;
-    min-height: 40px;
-}
-
-.ds-date-picker .button {
-    min-height: 40px;
-    padding: 0 16px;
-}
-
 .ds-stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 20px;
     margin-bottom: 24px;
 }
@@ -175,19 +175,20 @@ $pageviews_change = $prev_totals->pageviews > 0
     line-height: 1.2;
 }
 
+.ds-stat-card .sub {
+    font-size: 14px;
+    color: var(--ds-text-muted);
+    margin-top: 4px;
+}
+
 .ds-stat-card .change {
     font-size: 13px;
     margin-top: 8px;
     font-weight: 500;
 }
 
-.ds-stat-card .change.positive {
-    color: var(--ds-success);
-}
-
-.ds-stat-card .change.negative {
-    color: var(--ds-danger);
-}
+.ds-stat-card .change.positive { color: var(--ds-success); }
+.ds-stat-card .change.negative { color: var(--ds-danger); }
 
 .ds-card {
     background: #fff;
@@ -209,17 +210,12 @@ $pageviews_change = $prev_totals->pageviews > 0
     color: var(--ds-text);
 }
 
-.ds-card-body {
-    padding: 20px;
-}
-
-.ds-chart {
-    min-height: 300px;
-}
+.ds-card-body { padding: 20px; }
+.ds-chart { min-height: 300px; }
 
 .ds-tables {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 24px;
 }
 
@@ -266,35 +262,60 @@ $pageviews_change = $prev_totals->pageviews > 0
     text-decoration: none;
 }
 
-.ds-table a:hover {
-    text-decoration: underline;
+.ds-table a:hover { text-decoration: underline; }
+.ds-table tbody tr:last-child td { border-bottom: none; }
+.ds-empty { color: var(--ds-text-muted); font-style: italic; }
+
+.ds-bar-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
-.ds-table tbody tr:last-child td {
-    border-bottom: none;
+.ds-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
-.ds-empty {
-    color: var(--ds-text-muted);
-    font-style: italic;
+.ds-bar-label {
+    width: 100px;
+    font-size: 14px;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.ds-bar-track {
+    flex: 1;
+    height: 24px;
+    background: #f0f0f1;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.ds-bar-fill {
+    height: 100%;
+    background: var(--ds-primary);
+    border-radius: 4px;
+    transition: width 0.3s;
+}
+
+.ds-bar-fill.mobile { background: #00a32a; }
+.ds-bar-fill.tablet { background: #d63638; }
+
+.ds-bar-value {
+    width: 80px;
+    text-align: right;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 782px) {
-    #ds-dashboard {
-        margin-left: -10px;
-    }
-    
-    .ds-content {
-        padding: 16px;
-    }
-    
-    .ds-tables {
-        grid-template-columns: 1fr;
-    }
-    
-    .ds-stat-card .value {
-        font-size: 28px;
-    }
+    #ds-dashboard { margin-left: -10px; }
+    .ds-content { padding: 16px; }
+    .ds-tables { grid-template-columns: 1fr; }
+    .ds-stat-card .value { font-size: 28px; }
+    .ds-tabs { overflow-x: auto; justify-content: flex-start; }
 }
 </style>
 
@@ -306,6 +327,15 @@ $pageviews_change = $prev_totals->pageviews > 0
         </div>
     </div>
     
+    <div class="ds-tabs">
+        <?php foreach ($tabs as $key => $label): ?>
+            <a href="<?php echo esc_url(add_query_arg(['tab' => $key, 'view' => $range], $dashboard_url)); ?>" 
+               class="<?php echo $tab === $key ? 'active' : ''; ?>">
+                <?php echo esc_html($label); ?>
+            </a>
+        <?php endforeach; ?>
+    </div>
+    
     <div class="ds-content">
         <div class="ds-toolbar">
             <div class="ds-realtime">
@@ -315,6 +345,7 @@ $pageviews_change = $prev_totals->pageviews > 0
             
             <form method="get" class="ds-date-picker">
                 <input type="hidden" name="page" value="data-signals">
+                <input type="hidden" name="tab" value="<?php echo esc_attr($tab); ?>">
                 
                 <select name="view" onchange="this.form.submit()">
                     <?php foreach ($presets as $key => $label): ?>
@@ -334,168 +365,25 @@ $pageviews_change = $prev_totals->pageviews > 0
             </form>
         </div>
         
-        <div class="ds-stats-grid">
-            <div class="ds-stat-card">
-                <h3><?php esc_html_e('Visitors', 'data-signals'); ?></h3>
-                <div class="value"><?php echo number_format_i18n($totals->visitors); ?></div>
-                <?php if ($visitors_change != 0): ?>
-                    <div class="change <?php echo $visitors_change > 0 ? 'positive' : 'negative'; ?>">
-                        <?php echo ($visitors_change > 0 ? '↑ +' : '↓ ') . $visitors_change; ?>% vs previous period
-                    </div>
-                <?php endif; ?>
-            </div>
-            
-            <div class="ds-stat-card">
-                <h3><?php esc_html_e('Pageviews', 'data-signals'); ?></h3>
-                <div class="value"><?php echo number_format_i18n($totals->pageviews); ?></div>
-                <?php if ($pageviews_change != 0): ?>
-                    <div class="change <?php echo $pageviews_change > 0 ? 'positive' : 'negative'; ?>">
-                        <?php echo ($pageviews_change > 0 ? '↑ +' : '↓ ') . $pageviews_change; ?>% vs previous period
-                    </div>
-                <?php endif; ?>
-            </div>
-            
-            <div class="ds-stat-card">
-                <h3><?php esc_html_e('Pages per Visit', 'data-signals'); ?></h3>
-                <div class="value">
-                    <?php echo $totals->visitors > 0 ? number_format_i18n($totals->pageviews / $totals->visitors, 2) : '0'; ?>
-                </div>
-            </div>
-        </div>
-        
-        <div class="ds-card">
-            <div class="ds-card-header">
-                <h3><?php esc_html_e('Traffic Overview', 'data-signals'); ?></h3>
-            </div>
-            <div class="ds-card-body ds-chart">
-                <canvas id="ds-chart" height="280"></canvas>
-            </div>
-        </div>
-        
-        <div class="ds-tables">
-            <div class="ds-card">
-                <div class="ds-card-header">
-                    <h3><?php esc_html_e('Top Pages', 'data-signals'); ?></h3>
-                </div>
-                <table class="ds-table">
-                    <thead>
-                        <tr>
-                            <th><?php esc_html_e('Page', 'data-signals'); ?></th>
-                            <th class="num"><?php esc_html_e('Visitors', 'data-signals'); ?></th>
-                            <th class="num"><?php esc_html_e('Views', 'data-signals'); ?></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($pages)): ?>
-                            <tr><td colspan="3" class="ds-empty"><?php esc_html_e('No data yet.', 'data-signals'); ?></td></tr>
-                        <?php else: ?>
-                            <?php foreach ($pages as $page): ?>
-                                <tr>
-                                    <td class="url" title="<?php echo esc_attr($page->path); ?>">
-                                        <a href="<?php echo esc_url($page->url); ?>" target="_blank">
-                                            <?php echo esc_html($page->title ?: $page->path); ?>
-                                        </a>
-                                    </td>
-                                    <td class="num"><?php echo number_format_i18n($page->visitors); ?></td>
-                                    <td class="num"><?php echo number_format_i18n($page->pageviews); ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="ds-card">
-                <div class="ds-card-header">
-                    <h3><?php esc_html_e('Top Referrers', 'data-signals'); ?></h3>
-                </div>
-                <table class="ds-table">
-                    <thead>
-                        <tr>
-                            <th><?php esc_html_e('Source', 'data-signals'); ?></th>
-                            <th class="num"><?php esc_html_e('Visitors', 'data-signals'); ?></th>
-                            <th class="num"><?php esc_html_e('Views', 'data-signals'); ?></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($referrers)): ?>
-                            <tr><td colspan="3" class="ds-empty"><?php esc_html_e('No referrer data yet.', 'data-signals'); ?></td></tr>
-                        <?php else: ?>
-                            <?php foreach ($referrers as $referrer): ?>
-                                <tr>
-                                    <td class="url" title="<?php echo esc_attr($referrer->url); ?>">
-                                        <?php echo esc_html($referrer->url); ?>
-                                    </td>
-                                    <td class="num"><?php echo number_format_i18n($referrer->visitors); ?></td>
-                                    <td class="num"><?php echo number_format_i18n($referrer->pageviews); ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        <?php
+        // Render tab content
+        switch ($tab) {
+            case 'devices':
+                include DS_DIR . '/views/tabs/devices.php';
+                break;
+            case 'geographic':
+                include DS_DIR . '/views/tabs/geographic.php';
+                break;
+            case 'campaigns':
+                include DS_DIR . '/views/tabs/campaigns.php';
+                break;
+            case 'referrers':
+                include DS_DIR . '/views/tabs/referrers.php';
+                break;
+            default:
+                include DS_DIR . '/views/tabs/overview.php';
+                break;
+        }
+        ?>
     </div>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script>
-(function() {
-    var ctx = document.getElementById('ds-chart').getContext('2d');
-    var data = <?php echo wp_json_encode($chart_data); ?>;
-    
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: data.map(function(d) { return d.date; }),
-            datasets: [
-                {
-                    label: '<?php esc_html_e('Visitors', 'data-signals'); ?>',
-                    data: data.map(function(d) { return d.visitors; }),
-                    backgroundColor: 'rgba(56, 88, 233, 0.85)',
-                    borderRadius: 3,
-                    yAxisID: 'y'
-                },
-                {
-                    label: '<?php esc_html_e('Pageviews', 'data-signals'); ?>',
-                    data: data.map(function(d) { return d.pageviews; }),
-                    backgroundColor: 'rgba(0, 163, 42, 0.65)',
-                    borderRadius: 3,
-                    yAxisID: 'y1'
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            scales: {
-                x: {
-                    grid: { display: false }
-                },
-                y: { 
-                    type: 'linear', 
-                    position: 'left', 
-                    beginAtZero: true,
-                    grid: { color: '#e2e4e7' }
-                },
-                y1: { 
-                    type: 'linear', 
-                    position: 'right', 
-                    beginAtZero: true, 
-                    grid: { drawOnChartArea: false }
-                }
-            },
-            plugins: {
-                legend: { 
-                    position: 'top',
-                    labels: {
-                        usePointStyle: true,
-                        padding: 20
-                    }
-                }
-            }
-        }
-    });
-})();
-</script>

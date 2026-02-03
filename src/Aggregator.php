@@ -7,6 +7,9 @@ class Aggregator {
     private array $site_stats = [];
     private array $page_stats = [];
     private array $referrer_stats = [];
+    private array $device_stats = [];
+    private array $geo_stats = [];
+    private array $campaign_stats = [];
     private array $realtime = [];
     
     /**
@@ -65,10 +68,28 @@ class Aggregator {
      */
     private function process_line(string $type, array $params): void {
         if ($type !== 'p') {
-            return; // Only pageviews for now
+            return;
         }
         
-        [$timestamp, $path, $post_id, $new_visitor, $unique_pageview, $referrer_url] = $params;
+        // Extract params (handle both old and new format)
+        $timestamp      = $params[0] ?? 0;
+        $path           = $params[1] ?? '';
+        $post_id        = $params[2] ?? 0;
+        $new_visitor    = $params[3] ?? 0;
+        $unique_pageview = $params[4] ?? 0;
+        $referrer_url   = $params[5] ?? '';
+        
+        // Enhanced tracking data (may be missing in old buffer entries)
+        $device_type    = $params[6] ?? 'desktop';
+        $browser        = $params[7] ?? '';
+        $os             = $params[8] ?? '';
+        $country_code   = $params[9] ?? '';
+        $country_name   = $params[10] ?? '';
+        $utm_source     = $params[11] ?? '';
+        $utm_medium     = $params[12] ?? '';
+        $utm_campaign   = $params[13] ?? '';
+        $utm_content    = $params[14] ?? '';
+        $utm_term       = $params[15] ?? '';
         
         // Convert to local date
         $dt = new \DateTime('now', get_site_timezone());
@@ -109,15 +130,73 @@ class Aggregator {
                     $this->referrer_stats[$date_key] = [];
                 }
                 if (!isset($this->referrer_stats[$date_key][$referrer_url])) {
-                    $this->referrer_stats[$date_key][$referrer_url] = [
-                        'visitors' => 0,
-                        'pageviews' => 0,
-                    ];
+                    $this->referrer_stats[$date_key][$referrer_url] = ['visitors' => 0, 'pageviews' => 0];
                 }
                 $this->referrer_stats[$date_key][$referrer_url]['pageviews']++;
                 if ($new_visitor) {
                     $this->referrer_stats[$date_key][$referrer_url]['visitors']++;
                 }
+            }
+        }
+        
+        // Update device stats
+        $device_key = "{$device_type}|{$browser}|{$os}";
+        if (!isset($this->device_stats[$date_key])) {
+            $this->device_stats[$date_key] = [];
+        }
+        if (!isset($this->device_stats[$date_key][$device_key])) {
+            $this->device_stats[$date_key][$device_key] = [
+                'device_type' => $device_type,
+                'browser' => $browser,
+                'os' => $os,
+                'visitors' => 0,
+                'pageviews' => 0,
+            ];
+        }
+        $this->device_stats[$date_key][$device_key]['pageviews']++;
+        if ($new_visitor) {
+            $this->device_stats[$date_key][$device_key]['visitors']++;
+        }
+        
+        // Update geo stats
+        if (!empty($country_code)) {
+            if (!isset($this->geo_stats[$date_key])) {
+                $this->geo_stats[$date_key] = [];
+            }
+            if (!isset($this->geo_stats[$date_key][$country_code])) {
+                $this->geo_stats[$date_key][$country_code] = [
+                    'country_code' => $country_code,
+                    'country_name' => $country_name,
+                    'visitors' => 0,
+                    'pageviews' => 0,
+                ];
+            }
+            $this->geo_stats[$date_key][$country_code]['pageviews']++;
+            if ($new_visitor) {
+                $this->geo_stats[$date_key][$country_code]['visitors']++;
+            }
+        }
+        
+        // Update campaign stats
+        if (!empty($utm_source) || !empty($utm_campaign)) {
+            $campaign_key = "{$utm_source}|{$utm_medium}|{$utm_campaign}|{$utm_content}|{$utm_term}";
+            if (!isset($this->campaign_stats[$date_key])) {
+                $this->campaign_stats[$date_key] = [];
+            }
+            if (!isset($this->campaign_stats[$date_key][$campaign_key])) {
+                $this->campaign_stats[$date_key][$campaign_key] = [
+                    'utm_source' => $utm_source,
+                    'utm_medium' => $utm_medium,
+                    'utm_campaign' => $utm_campaign,
+                    'utm_content' => $utm_content,
+                    'utm_term' => $utm_term,
+                    'visitors' => 0,
+                    'pageviews' => 0,
+                ];
+            }
+            $this->campaign_stats[$date_key][$campaign_key]['pageviews']++;
+            if ($new_visitor) {
+                $this->campaign_stats[$date_key][$campaign_key]['visitors']++;
             }
         }
         
@@ -135,6 +214,9 @@ class Aggregator {
         $this->commit_site_stats();
         $this->commit_page_stats();
         $this->commit_referrer_stats();
+        $this->commit_device_stats();
+        $this->commit_geo_stats();
+        $this->commit_campaign_stats();
         $this->update_realtime();
     }
     
@@ -159,7 +241,6 @@ class Aggregator {
         global $wpdb;
         
         foreach ($this->page_stats as $date => $pages) {
-            // Get or create path IDs
             $path_ids = Path_Repository::upsert(array_keys($pages));
             
             $values = [];
@@ -192,7 +273,6 @@ class Aggregator {
         global $wpdb;
         
         foreach ($this->referrer_stats as $date => $referrers) {
-            // Get or create referrer IDs
             $referrer_ids = Referrer_Repository::upsert(array_keys($referrers));
             
             $values = [];
@@ -220,18 +300,111 @@ class Aggregator {
         $this->referrer_stats = [];
     }
     
+    private function commit_device_stats(): void {
+        global $wpdb;
+        
+        foreach ($this->device_stats as $date => $devices) {
+            $values = [];
+            foreach ($devices as $stats) {
+                $values[] = $wpdb->prepare(
+                    '(%s, %s, %s, %s, %d, %d)',
+                    $date,
+                    $stats['device_type'],
+                    $stats['browser'],
+                    $stats['os'],
+                    $stats['visitors'],
+                    $stats['pageviews']
+                );
+            }
+            
+            if (!empty($values)) {
+                $wpdb->query(
+                    "INSERT INTO {$wpdb->prefix}ds_device_stats (date, device_type, browser, os, visitors, pageviews) 
+                     VALUES " . implode(',', $values) . "
+                     ON DUPLICATE KEY UPDATE 
+                     visitors = visitors + VALUES(visitors), 
+                     pageviews = pageviews + VALUES(pageviews)"
+                );
+            }
+        }
+        
+        $this->device_stats = [];
+    }
+    
+    private function commit_geo_stats(): void {
+        global $wpdb;
+        
+        foreach ($this->geo_stats as $date => $countries) {
+            $values = [];
+            foreach ($countries as $stats) {
+                $values[] = $wpdb->prepare(
+                    '(%s, %s, %s, %d, %d)',
+                    $date,
+                    $stats['country_code'],
+                    $stats['country_name'],
+                    $stats['visitors'],
+                    $stats['pageviews']
+                );
+            }
+            
+            if (!empty($values)) {
+                $wpdb->query(
+                    "INSERT INTO {$wpdb->prefix}ds_geo_stats (date, country_code, country_name, visitors, pageviews) 
+                     VALUES " . implode(',', $values) . "
+                     ON DUPLICATE KEY UPDATE 
+                     visitors = visitors + VALUES(visitors), 
+                     pageviews = pageviews + VALUES(pageviews)"
+                );
+            }
+        }
+        
+        $this->geo_stats = [];
+    }
+    
+    private function commit_campaign_stats(): void {
+        global $wpdb;
+        
+        foreach ($this->campaign_stats as $date => $campaigns) {
+            $values = [];
+            foreach ($campaigns as $stats) {
+                $values[] = $wpdb->prepare(
+                    '(%s, %s, %s, %s, %s, %s, %d, %d)',
+                    $date,
+                    $stats['utm_source'],
+                    $stats['utm_medium'],
+                    $stats['utm_campaign'],
+                    $stats['utm_content'],
+                    $stats['utm_term'],
+                    $stats['visitors'],
+                    $stats['pageviews']
+                );
+            }
+            
+            if (!empty($values)) {
+                $wpdb->query(
+                    "INSERT INTO {$wpdb->prefix}ds_campaign_stats 
+                     (date, utm_source, utm_medium, utm_campaign, utm_content, utm_term, visitors, pageviews) 
+                     VALUES " . implode(',', $values) . "
+                     ON DUPLICATE KEY UPDATE 
+                     visitors = visitors + VALUES(visitors), 
+                     pageviews = pageviews + VALUES(pageviews)"
+                );
+            }
+        }
+        
+        $this->campaign_stats = [];
+    }
+    
     private function update_realtime(): void {
         $counts = (array) get_option('ds_realtime_pageviews', []);
         $one_hour_ago = time() - 3600;
         
-        // Remove old data
         foreach ($counts as $ts => $unused) {
             if ((int) $ts < $one_hour_ago) {
                 unset($counts[$ts]);
             }
         }
         
-        // Add new counts
         foreach ($this->realtime as $ts => $count) {
             $counts[$ts] = ($counts[$ts] ?? 0) + $count;
         }
@@ -241,34 +414,26 @@ class Aggregator {
     }
     
     private function normalize_path(string $path): string {
-        // Remove query string
         $path = strtok($path, '?');
-        
-        // Remove trailing slash (except for root)
         if ($path !== '/' && str_ends_with($path, '/')) {
             $path = rtrim($path, '/');
         }
-        
         return $path;
     }
     
     private function normalize_referrer(string $url): string {
         $parsed = parse_url($url);
-        
         if (!isset($parsed['host'])) {
             return '';
         }
         
-        // Skip same-site referrers
         $site_host = parse_url(home_url(), PHP_URL_HOST);
         if ($parsed['host'] === $site_host) {
             return '';
         }
         
-        // Remove www prefix
         $host = preg_replace('/^www\./', '', $parsed['host']);
         
-        // For search engines, just keep the domain
         $search_engines = ['google', 'bing', 'yahoo', 'duckduckgo', 'baidu', 'yandex'];
         foreach ($search_engines as $se) {
             if (str_contains($host, $se)) {
@@ -276,7 +441,6 @@ class Aggregator {
             }
         }
         
-        // Keep host + path for other referrers
         $path = $parsed['path'] ?? '';
         $path = rtrim($path, '/');
         

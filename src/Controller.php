@@ -43,8 +43,8 @@ class Controller {
     
     private function collect_request(): void {
         // Ignore bots
-        $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
-        if (empty($ua) || preg_match('/bot|crawl|spider|seo|lighthouse|facebookexternalhit|preview/i', $ua)) {
+        $detector = new Device_Detector();
+        if ($detector->is_bot()) {
             $this->send_response(204);
         }
         
@@ -54,7 +54,7 @@ class Controller {
         }
         
         $params = array_merge($_GET, $_POST);
-        $data = $this->extract_pageview_data($params);
+        $data = $this->extract_pageview_data($params, $detector);
         
         if (empty($data)) {
             $this->send_response(400);
@@ -64,7 +64,7 @@ class Controller {
         $this->send_response($success ? 200 : 500);
     }
     
-    private function extract_pageview_data(array $params): array {
+    private function extract_pageview_data(array $params, Device_Detector $detector): array {
         if (!isset($params['p'])) {
             return [];
         }
@@ -86,14 +86,33 @@ class Controller {
         $hash = hash('xxh64', $path);
         [$new_visitor, $unique_pageview] = Fingerprinter::determine_uniqueness($hash);
         
+        // Get device info
+        $device = $detector->detect();
+        
+        // Get geo info (async-safe with caching)
+        $geo = Geo_Locator::get_country();
+        
+        // Get UTM params
+        $utm = Campaign_Tracker::extract($params['u'] ?? ''); // 'u' = full URL with query
+        
         return [
-            'p',                           // type indicator
-            time(),                        // unix timestamp
-            $path,                         // page path
-            $post_id,                      // post ID
-            $new_visitor ? 1 : 0,          // new visitor
-            $unique_pageview ? 1 : 0,      // unique pageview
-            substr($referrer, 0, 255),     // referrer URL
+            'p',                                    // 0: type indicator
+            time(),                                 // 1: unix timestamp
+            $path,                                  // 2: page path
+            $post_id,                               // 3: post ID
+            $new_visitor ? 1 : 0,                   // 4: new visitor
+            $unique_pageview ? 1 : 0,               // 5: unique pageview
+            substr($referrer, 0, 255),              // 6: referrer URL
+            $device['device_type'],                 // 7: device type
+            $device['browser'],                     // 8: browser
+            $device['os'],                          // 9: OS
+            $geo['country_code'],                   // 10: country code
+            $geo['country_name'],                   // 11: country name
+            $utm['utm_source'],                     // 12: utm_source
+            $utm['utm_medium'],                     // 13: utm_medium
+            $utm['utm_campaign'],                   // 14: utm_campaign
+            $utm['utm_content'],                    // 15: utm_content
+            $utm['utm_term'],                       // 16: utm_term
         ];
     }
     

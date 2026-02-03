@@ -18,6 +18,13 @@ class Dashboard {
         $timezone = get_site_timezone();
         $now = new DateTimeImmutable('now', $timezone);
         
+        // Determine current tab
+        $tab = $_GET['tab'] ?? 'overview';
+        $valid_tabs = ['overview', 'devices', 'geographic', 'campaigns', 'referrers'];
+        if (!in_array($tab, $valid_tabs)) {
+            $tab = 'overview';
+        }
+        
         // Determine date range
         $range = $_GET['view'] ?? $settings['default_view'];
         
@@ -36,36 +43,77 @@ class Dashboard {
         $start_str = $date_start->format('Y-m-d');
         $end_str = $date_end->format('Y-m-d');
         
-        // Get stats
-        $totals = $this->stats->get_totals($start_str, $end_str);
-        
         // Comparison period
         $days_diff = $date_end->diff($date_start)->days + 1;
         $prev_end = $date_start->modify('-1 day');
         $prev_start = $prev_end->modify("-{$days_diff} days");
-        $prev_totals = $this->stats->get_totals($prev_start->format('Y-m-d'), $prev_end->format('Y-m-d'));
         
-        // Chart data
-        $group = $date_end->diff($date_start)->days >= 90 ? 'month' : 'day';
-        $chart_data = $this->stats->get_stats($start_str, $end_str, $group);
-        
-        // Top pages
-        $pages_offset = absint($_GET['pages_offset'] ?? 0);
-        $pages = $this->stats->get_pages($start_str, $end_str, $pages_offset, $this->items_per_page);
-        $pages_count = $this->stats->count_pages($start_str, $end_str);
-        
-        // Top referrers
-        $referrers_offset = absint($_GET['referrers_offset'] ?? 0);
-        $referrers = $this->stats->get_referrers($start_str, $end_str, $referrers_offset, $this->items_per_page);
-        $referrers_count = $this->stats->count_referrers($start_str, $end_str);
-        
-        // Realtime
-        $realtime = get_realtime_pageview_count('-1 hour');
-        
-        // Date presets
+        // Get common data
         $presets = $this->get_date_presets();
+        $realtime = get_realtime_pageview_count('-1 hour');
+        $tabs = $this->get_tabs();
         
+        // Tab-specific data
+        $view_data = [
+            'tab' => $tab,
+            'tabs' => $tabs,
+            'presets' => $presets,
+            'range' => $range,
+            'date_start' => $date_start,
+            'date_end' => $date_end,
+            'start_str' => $start_str,
+            'end_str' => $end_str,
+            'realtime' => $realtime,
+        ];
+        
+        switch ($tab) {
+            case 'devices':
+                $view_data['device_totals'] = $this->stats->get_device_totals($start_str, $end_str);
+                $view_data['browsers'] = $this->stats->get_devices($start_str, $end_str, 'browser', 10);
+                $view_data['os_list'] = $this->stats->get_devices($start_str, $end_str, 'os', 10);
+                break;
+                
+            case 'geographic':
+                $view_data['countries'] = $this->stats->get_countries($start_str, $end_str, 20);
+                $view_data['totals'] = $this->stats->get_totals($start_str, $end_str);
+                break;
+                
+            case 'campaigns':
+                $view_data['campaigns'] = $this->stats->get_campaigns($start_str, $end_str, 20);
+                $view_data['sources'] = $this->stats->get_campaign_sources($start_str, $end_str, 10);
+                break;
+                
+            case 'referrers':
+                $view_data['referrers'] = $this->stats->get_referrers($start_str, $end_str, 0, 20);
+                $view_data['totals'] = $this->stats->get_totals($start_str, $end_str);
+                break;
+                
+            case 'overview':
+            default:
+                $view_data['totals'] = $this->stats->get_totals($start_str, $end_str);
+                $view_data['prev_totals'] = $this->stats->get_totals(
+                    $prev_start->format('Y-m-d'), 
+                    $prev_end->format('Y-m-d')
+                );
+                $group = $date_end->diff($date_start)->days >= 90 ? 'month' : 'day';
+                $view_data['chart_data'] = $this->stats->get_stats($start_str, $end_str, $group);
+                $view_data['pages'] = $this->stats->get_pages($start_str, $end_str, 0, 10);
+                $view_data['referrers'] = $this->stats->get_referrers($start_str, $end_str, 0, 10);
+                break;
+        }
+        
+        extract($view_data);
         require DS_DIR . '/views/dashboard.php';
+    }
+    
+    public function get_tabs(): array {
+        return [
+            'overview'   => __('Overview', 'data-signals'),
+            'devices'    => __('Devices', 'data-signals'),
+            'geographic' => __('Geographic', 'data-signals'),
+            'campaigns'  => __('Campaigns', 'data-signals'),
+            'referrers'  => __('Referrers', 'data-signals'),
+        ];
     }
     
     public function get_date_presets(): array {

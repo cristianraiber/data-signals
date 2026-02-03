@@ -1,5 +1,5 @@
 /**
- * Data Signals - Lightweight tracking script (~400 bytes minified)
+ * Data Signals - Lightweight tracking script
  * Privacy-friendly: no cookies, fingerprint-based sessions
  */
 (function() {
@@ -11,7 +11,8 @@
     // Build request URL
     var params = [
         'p=' + encodeURIComponent(c.path || location.pathname),
-        'id=' + (c.id || 0)
+        'id=' + (c.id || 0),
+        'u=' + encodeURIComponent(location.href) // Full URL for UTM params
     ];
     
     // Add referrer if external
