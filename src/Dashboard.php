@@ -20,7 +20,7 @@ class Dashboard {
         
         // Determine current tab
         $tab = $_GET['tab'] ?? 'overview';
-        $valid_tabs = ['overview', 'devices', 'geographic', 'campaigns', 'referrers'];
+        $valid_tabs = ['overview', 'devices', 'geographic', 'campaigns', 'referrers', 'clicks'];
         if (!in_array($tab, $valid_tabs)) {
             $tab = 'overview';
         }
@@ -88,6 +88,13 @@ class Dashboard {
                 $view_data['totals'] = $this->stats->get_totals($start_str, $end_str);
                 break;
                 
+            case 'clicks':
+                $view_data['click_totals'] = $this->stats->get_click_totals($start_str, $end_str);
+                $view_data['outbound_clicks'] = $this->stats->get_clicks($start_str, $end_str, 'outbound', 15);
+                $view_data['download_clicks'] = $this->stats->get_clicks($start_str, $end_str, 'download', 10);
+                $view_data['top_domains'] = $this->stats->get_top_domains($start_str, $end_str, 10);
+                break;
+                
             case 'overview':
             default:
                 $view_data['totals'] = $this->stats->get_totals($start_str, $end_str);
@@ -113,6 +120,7 @@ class Dashboard {
             'geographic' => __('Geographic', 'data-signals'),
             'campaigns'  => __('Campaigns', 'data-signals'),
             'referrers'  => __('Referrers', 'data-signals'),
+            'clicks'     => __('Clicks', 'data-signals'),
         ];
     }
     

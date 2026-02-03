@@ -317,4 +317,95 @@ class Stats {
             return $row;
         }, $results);
     }
+    
+    /**
+     * Get click stats by type
+     */
+    public function get_clicks(string $start, string $end, string $type = '', int $limit = 20): array {
+        global $wpdb;
+        
+        $where = "date >= %s AND date <= %s";
+        $params = [$start, $end];
+        
+        if (!empty($type)) {
+            $where .= " AND click_type = %s";
+            $params[] = $type;
+        }
+        
+        $params[] = $limit;
+        
+        $results = $wpdb->get_results($wpdb->prepare(
+            "SELECT click_type, target_url, target_domain, 
+                    SUM(clicks) AS clicks, SUM(unique_clicks) AS unique_clicks
+             FROM {$wpdb->prefix}ds_click_stats
+             WHERE {$where}
+             GROUP BY click_type, target_url
+             ORDER BY clicks DESC
+             LIMIT %d",
+            ...$params
+        ));
+        
+        return array_map(function($row) {
+            $row->clicks = (int) $row->clicks;
+            $row->unique_clicks = (int) $row->unique_clicks;
+            return $row;
+        }, $results);
+    }
+    
+    /**
+     * Get click totals by type
+     */
+    public function get_click_totals(string $start, string $end): array {
+        global $wpdb;
+        
+        $results = $wpdb->get_results($wpdb->prepare(
+            "SELECT click_type, SUM(clicks) AS clicks, SUM(unique_clicks) AS unique_clicks
+             FROM {$wpdb->prefix}ds_click_stats
+             WHERE date >= %s AND date <= %s
+             GROUP BY click_type",
+            $start, $end
+        ));
+        
+        $totals = [
+            'outbound' => ['clicks' => 0, 'unique' => 0],
+            'download' => ['clicks' => 0, 'unique' => 0],
+            'mailto' => ['clicks' => 0, 'unique' => 0],
+            'tel' => ['clicks' => 0, 'unique' => 0],
+            'total' => ['clicks' => 0, 'unique' => 0],
+        ];
+        
+        foreach ($results as $row) {
+            if (isset($totals[$row->click_type])) {
+                $totals[$row->click_type]['clicks'] = (int) $row->clicks;
+                $totals[$row->click_type]['unique'] = (int) $row->unique_clicks;
+            }
+            $totals['total']['clicks'] += (int) $row->clicks;
+            $totals['total']['unique'] += (int) $row->unique_clicks;
+        }
+        
+        return $totals;
+    }
+    
+    /**
+     * Get top clicked domains (outbound)
+     */
+    public function get_top_domains(string $start, string $end, int $limit = 10): array {
+        global $wpdb;
+        
+        $results = $wpdb->get_results($wpdb->prepare(
+            "SELECT target_domain AS domain, SUM(clicks) AS clicks, SUM(unique_clicks) AS unique_clicks
+             FROM {$wpdb->prefix}ds_click_stats
+             WHERE date >= %s AND date <= %s AND click_type = 'outbound' AND target_domain != ''
+             GROUP BY target_domain
+             ORDER BY clicks DESC
+             LIMIT %d",
+            $start, $end, $limit
+        ));
+        
+        return array_map(function($row) {
+            $row->clicks = (int) $row->clicks;
+            $row->unique_clicks = (int) $row->unique_clicks;
+            return $row;
+        }, $results);
+    }
 }

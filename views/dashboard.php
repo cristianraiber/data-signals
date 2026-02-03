@@ -578,6 +578,7 @@ function ds_flag($code) {
                 'geographic' => '🌍',
                 'campaigns' => '📣',
                 'referrers' => '🔗',
+                'clicks' => '👆',
             ];
             foreach ($tabs as $key => $label): 
             ?>
@@ -630,6 +631,9 @@ function ds_flag($code) {
                 break;
             case 'referrers':
                 include DS_DIR . '/views/tabs/referrers.php';
+                break;
+            case 'clicks':
+                include DS_DIR . '/views/tabs/clicks.php';
                 break;
             default:
                 include DS_DIR . '/views/tabs/overview.php';

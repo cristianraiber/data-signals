@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('DS_VERSION', '2.1.0');
+define('DS_VERSION', '2.2.0');
 define('DS_FILE', __FILE__);
 define('DS_DIR', __DIR__);
 

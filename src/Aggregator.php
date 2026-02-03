@@ -10,6 +10,7 @@ class Aggregator {
     private array $device_stats = [];
     private array $geo_stats = [];
     private array $campaign_stats = [];
+    private array $click_stats = [];
     private array $realtime = [];
     
     /**
@@ -67,6 +68,11 @@ class Aggregator {
      * Process a single line from the buffer
      */
     private function process_line(string $type, array $params): void {
+        if ($type === 'c') {
+            $this->process_click($params);
+            return;
+        }
+        
         if ($type !== 'p') {
             return;
         }
@@ -208,6 +214,48 @@ class Aggregator {
     }
     
     /**
+     * Process a click event
+     */
+    private function process_click(array $params): void {
+        $timestamp    = $params[0] ?? 0;
+        $click_type   = $params[1] ?? '';
+        $target_url   = $params[2] ?? '';
+        $domain       = $params[3] ?? '';
+        $unique_click = $params[4] ?? 0;
+        
+        if (empty($click_type) || empty($target_url)) {
+            return;
+        }
+        
+        // Convert to local date
+        $dt = new \DateTime('now', get_site_timezone());
+        $dt->setTimestamp($timestamp);
+        $date_key = $dt->format('Y-m-d');
+        
+        // Build key
+        $click_key = "{$click_type}|{$target_url}";
+        
+        if (!isset($this->click_stats[$date_key])) {
+            $this->click_stats[$date_key] = [];
+        }
+        
+        if (!isset($this->click_stats[$date_key][$click_key])) {
+            $this->click_stats[$date_key][$click_key] = [
+                'click_type' => $click_type,
+                'target_url' => $target_url,
+                'target_domain' => $domain,
+                'clicks' => 0,
+                'unique_clicks' => 0,
+            ];
+        }
+        
+        $this->click_stats[$date_key][$click_key]['clicks']++;
+        if ($unique_click) {
+            $this->click_stats[$date_key][$click_key]['unique_clicks']++;
+        }
+    }
+    
+    /**
      * Commit aggregated stats to database
      */
     private function commit(): void {
@@ -217,6 +265,7 @@ class Aggregator {
         $this->commit_device_stats();
         $this->commit_geo_stats();
         $this->commit_campaign_stats();
+        $this->commit_click_stats();
         $this->update_realtime();
     }
     
@@ -393,6 +442,38 @@ class Aggregator {
         }
         
         $this->campaign_stats = [];
+    }
+    
+    private function commit_click_stats(): void {
+        global $wpdb;
+        
+        foreach ($this->click_stats as $date => $clicks) {
+            $values = [];
+            foreach ($clicks as $stats) {
+                $values[] = $wpdb->prepare(
+                    '(%s, %s, %s, %s, %d, %d)',
+                    $date,
+                    $stats['click_type'],
+                    $stats['target_url'],
+                    $stats['target_domain'],
+                    $stats['clicks'],
+                    $stats['unique_clicks']
+                );
+            }
+            
+            if (!empty($values)) {
+                $wpdb->query(
+                    "INSERT INTO {$wpdb->prefix}ds_click_stats 
+                     (date, click_type, target_url, target_domain, clicks, unique_clicks) 
+                     VALUES " . implode(',', $values) . "
+                     ON DUPLICATE KEY UPDATE 
+                     clicks = clicks + VALUES(clicks), 
+                     unique_clicks = unique_clicks + VALUES(unique_clicks)"
+                );
+            }
+        }
+        
+        $this->click_stats = [];
     }
     
     private function update_realtime(): void {

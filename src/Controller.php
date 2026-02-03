@@ -54,7 +54,15 @@ class Controller {
         }
         
         $params = array_merge($_GET, $_POST);
-        $data = $this->extract_pageview_data($params, $detector);
+        
+        // Determine event type
+        $type = $params['t'] ?? 'pageview';
+        
+        if ($type === 'click') {
+            $data = $this->extract_click_data($params);
+        } else {
+            $data = $this->extract_pageview_data($params, $detector);
+        }
         
         if (empty($data)) {
             $this->send_response(400);
@@ -113,6 +121,44 @@ class Controller {
             $utm['utm_campaign'],                   // 14: utm_campaign
             $utm['utm_content'],                    // 15: utm_content
             $utm['utm_term'],                       // 16: utm_term
+        ];
+    }
+    
+    private function extract_click_data(array $params): array {
+        $click_type = $params['ct'] ?? '';
+        $click_url = $params['cu'] ?? '';
+        
+        // Validate click type
+        $valid_types = ['outbound', 'download', 'mailto', 'tel'];
+        if (!in_array($click_type, $valid_types)) {
+            return [];
+        }
+        
+        // Sanitize URL
+        $click_url = filter_var(trim($click_url), FILTER_SANITIZE_URL);
+        if (empty($click_url)) {
+            return [];
+        }
+        
+        // Extract domain for outbound links
+        $domain = '';
+        if ($click_type === 'outbound') {
+            $parsed = parse_url($click_url);
+            $domain = $parsed['host'] ?? '';
+            $domain = preg_replace('/^www\./', '', $domain);
+        }
+        
+        // Determine uniqueness
+        $hash = hash('xxh64', $click_url);
+        [$new_visitor, $unique_click] = Fingerprinter::determine_uniqueness($hash);
+        
+        return [
+            'c',                                // 0: type indicator (click)
+            time(),                             // 1: timestamp
+            $click_type,                        // 2: click type
+            substr($click_url, 0, 500),         // 3: target URL
+            $domain,                            // 4: domain
+            $unique_click ? 1 : 0,              // 5: unique click
         ];
     }
     
