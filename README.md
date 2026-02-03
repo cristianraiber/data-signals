@@ -1,369 +1,80 @@
-# Data Signals - Privacy-Focused Revenue Analytics for WordPress
+# Data Signals
 
-**Know which content, campaigns, and traffic sources make you money — not just vanity metrics.**
+Privacy-friendly, lightweight analytics for WordPress. Inspired by [Koko Analytics](https://github.com/ibericode/koko-analytics).
 
-[![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-blue.svg)](https://wordpress.org/)
-[![PHP](https://img.shields.io/badge/PHP-8.0%2B-purple.svg)](https://php.net/)
-[![License](https://img.shields.io/badge/License-GPL%20v2-green.svg)](LICENSE)
-[![Performance](https://img.shields.io/badge/Performance-A%2B-brightgreen.svg)](#performance)
-[![Security](https://img.shields.io/badge/Security-A%2B-brightgreen.svg)](#security)
+## Features
 
----
+- **Privacy-first**: No cookies, no external services, GDPR-compliant by design
+- **Lightweight**: ~400 bytes tracking script, minimal database impact
+- **Fast**: Buffer-based collection with cron aggregation (no direct DB writes on pageview)
+- **Simple**: Clean PHP dashboard, no complex JavaScript framework required
+- **Self-hosted**: All data stays on your server
 
-## 🎯 What is Data Signals?
+## How It Works
 
-Data Signals is a **privacy-first revenue analytics** WordPress plugin that tracks what actually matters: **money**, not vanity metrics.
+### Tracking
+1. A tiny JavaScript snippet (~400 bytes) sends pageview data to the server
+2. Data is written to a buffer file (not directly to the database)
+3. A cron job runs every minute to aggregate buffer data into the database
+4. Session uniqueness is determined via a privacy-friendly fingerprint (daily rotating seed + user agent + IP hash)
 
-Inspired by [DataFa.st](https://datafa.st), Burst Statistics, Koko Analytics, and Plausible, Data Signals goes beyond traditional analytics by connecting your content, campaigns, and traffic sources directly to revenue.
+### Database Schema
+- `ds_site_stats` - Daily site-wide totals (visitors, pageviews)
+- `ds_page_stats` - Daily per-page stats
+- `ds_paths` - URL path lookup table
+- `ds_referrer_stats` - Daily referrer stats
+- `ds_referrers` - Referrer URL lookup table
+- `ds_dates` - Helper table for date ranges
 
-### Why Data Signals?
+### Privacy
+- No cookies by default
+- IP addresses are never stored
+- Session fingerprints rotate daily
+- Aggregated data only (no individual tracking)
+- Configurable data retention
 
-Traditional analytics show you pageviews and bounce rates. **Data Signals shows you:**
+## REST API
 
-- 📝 **Which blog posts generate sales** (content → pricing clicks → conversions)
-- 📧 **Which email campaigns drive revenue** (link-level attribution + ROI)
-- 🛒 **Which products convert by traffic source** (WooCommerce + EDD integration)
-- 🚦 **Which traffic sources bring paying customers** (not just visitors)
-- 🔍 **SEO revenue estimation** (Google Search Console integration)
+All endpoints require `view_data_signals` capability (or public dashboard enabled).
 
----
+```
+GET /wp-json/data-signals/v1/stats?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD&group=day|week|month
+GET /wp-json/data-signals/v1/totals?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
+GET /wp-json/data-signals/v1/pages?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD&offset=0&limit=10
+GET /wp-json/data-signals/v1/referrers?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD&offset=0&limit=10
+GET /wp-json/data-signals/v1/realtime?since=-1 hour
+```
 
-## ✨ Key Features
+## Requirements
 
-### Revenue Attribution
-- **4 attribution models:** First-click, Last-click, Linear, Time-decay
-- **Customer journey tracking:** From first visit to purchase
-- **Revenue per Visitor (RPV)** metric
-- **Multi-touch attribution** for complex journeys
-
-### Content Performance → Sales
-- Track which blog posts lead to conversions
-- Identify "money pages" (high conversion rate)
-- Content funnel analysis (blog → pricing → checkout)
-- Time-to-conversion tracking
-
-### Email Campaign Tracking
-- **UTM parameter parsing** (campaign, source, medium, content, term)
-- **Link-level click tracking** (which CTA converts)
-- **Email → Sale attribution**
-- **Campaign ROI calculation**
-- A/B test comparison
-
-### E-commerce Integration
-- **WooCommerce:** Order tracking, product attribution, cart analysis
-- **Easy Digital Downloads:** Download tracking, license attribution
-- Product performance by traffic source
-- Average Order Value (AOV) by channel
-- Purchase funnel drop-off analysis
-
-### Google Search Console Integration
-- **Keyword → Revenue estimation**
-- Daily keyword sync (impressions, clicks, position, CTR)
-- **SEO value calculation** (estimated revenue from organic)
-- Position tracking with alerts (drops >5 positions)
-- Content gap analysis
-
-### Privacy-First Tracking
-- ✅ **No cookies, no fingerprinting**
-- ✅ **IP anonymization** (last octet zeroed)
-- ✅ **Aggregate data only** (no personal tracking)
-- ✅ **GDPR/CCPA compliant** by design
-- ✅ **Cookieless session tracking** (server-side SHA-256 IDs)
-
----
-
-## 🚀 Performance
-
-**Designed to handle high-traffic sites:**
-
-- ⚡ **10,000 visits/minute** (166 req/sec) - tested
-- ⚡ **15-25ms response time** for tracking endpoint
-- ⚡ **204 req/sec achieved** (23% above target)
-- ⚡ **90%+ cache hit rate** (WordPress object cache)
-- ⚡ **5M+ visits stored** with optimized partitioning
-- ⚡ **No Redis required** - works with any WordPress caching (Memcached, APCu, transients)
-
-### Database Optimization
-- **Monthly partitioning** (auto-prune old data)
-- **Batch inserts** (100 events/query)
-- **15+ strategic indexes**
-- **Pre-computed aggregates** (cron jobs)
-- **WordPress object cache** for real-time stats (supports Memcached, APCu, Redis plugin, or transients)
-
----
-
-## 🔒 Security
-
-**Security Rating: A+ (95/100)**
-
-- ✅ **OWASP Top 10:** 9/10 PASS
-- ✅ **0 critical vulnerabilities**
-- ✅ **Rate limiting:** 1,000 req/min per IP
-- ✅ **AES-256 encryption** (OAuth tokens)
-- ✅ **SHA-256 hashing** (session IDs)
-- ✅ **Prepared statements** (all queries)
-- ✅ **Input sanitization** (all REST params)
-- ✅ **Capability checks** (`manage_options` for admin)
-
-Full security audit: [SECURITY.md](SECURITY.md)
-
----
-
-## 📊 Tech Stack
-
-### Backend
-- **PHP:** 8.0+ (typed properties, match expressions)
-- **Database:** MySQL 8.0+ (JSON support, partitioning, CTEs)
-- **Caching:** WordPress Object Cache (Memcached/APCu/Redis plugin, or transients)
-- **WordPress:** 6.0+ (REST API v2)
-
-### Frontend
-- **React:** 18+ (hooks, concurrent features)
-- **State:** Zustand (lightweight)
-- **Charts:** Recharts (declarative, responsive)
-- **Build:** webpack + @wordpress/scripts
-
-### Integrations
-- **WooCommerce:** Action hooks for order tracking
-- **Easy Digital Downloads:** `edd_complete_purchase`
-- **Google Search Console API:** OAuth 2.0, daily sync
-
----
-
-## 🛠️ Installation
-
-### Requirements
 - WordPress 6.0+
-- PHP 8.0+
-- MySQL 8.0+
-- **Optional (but recommended):** Persistent object cache (Memcached, APCu, or Redis plugin)
-  - Works perfectly fine with default WordPress transients (database-backed)
-  - Persistent cache improves performance for high-traffic sites
+- PHP 7.4+
 
-### Quick Install
+## Installation
 
-1. **Clone the repository:**
-```bash
-git clone https://github.com/cristianraiber/data-signals.git
-cd data-signals
-```
+1. Upload the plugin to `/wp-content/plugins/data-signals`
+2. Activate the plugin
+3. Visit **Analytics** in the admin menu
 
-2. **Install dependencies:**
-```bash
-npm install
-composer install
-```
+## Hooks & Filters
 
-3. **Build assets:**
-```bash
-npm run build
-```
-
-4. **Upload to WordPress:**
-```bash
-# Copy to wp-content/plugins/
-cp -r . /path/to/wordpress/wp-content/plugins/data-signals/
-```
-
-5. **Activate in WordPress:**
-```bash
-wp plugin activate data-signals
-```
-
-### Database Setup
-
-The plugin automatically creates 6 optimized tables on activation:
-- `wp_ds_pageviews` (partitioned by month)
-- `wp_ds_events`
-- `wp_ds_sessions`
-- `wp_ds_revenue_attribution`
-- `wp_ds_email_clicks`
-- `wp_ds_aggregates`
-
----
-
-## 📖 Usage
-
-### Tracking Pageviews
-
-The plugin automatically tracks pageviews on all WordPress pages. No manual setup required.
-
-### Tracking Conversions (WooCommerce)
+### `ds_is_request_excluded`
+Filter to exclude specific requests from tracking.
 
 ```php
-// Automatically tracked via hooks:
-// - woocommerce_payment_complete
-// - woocommerce_add_to_cart
-// - woocommerce_checkout_order_processed
+add_filter('ds_is_request_excluded', function($excluded) {
+    // Don't track specific paths
+    if (str_starts_with($_SERVER['REQUEST_URI'], '/api/')) {
+        return true;
+    }
+    return $excluded;
+});
 ```
 
-### Tracking Email Campaigns
+## Credits
 
-Add UTM parameters to your email links:
-```
-https://yoursite.com/blog/post?utm_source=newsletter&utm_medium=email&utm_campaign=june2026
-```
+Architecture inspired by [Koko Analytics](https://github.com/ibericode/koko-analytics) by Danny van Kooten.
 
-Or use the redirect tracking link:
-```
-https://yoursite.com/ds-track/email/?url=YOUR_URL&campaign=CAMPAIGN_ID
-```
+## License
 
-### REST API
-
-**Get Revenue by Source:**
-```bash
-curl https://yoursite.com/wp-json/data-signals/v1/revenue/by-source \
-  -H "X-WP-Nonce: YOUR_NONCE"
-```
-
-**Get Campaign Performance:**
-```bash
-curl https://yoursite.com/wp-json/data-signals/v1/campaigns/performance \
-  -H "X-WP-Nonce: YOUR_NONCE"
-```
-
-Full API documentation: [REST API Guide](docs/REST_API.md)
-
----
-
-## 📊 React Dashboard
-
-Access the analytics dashboard at:
-```
-WordPress Admin → Data Signals
-```
-
-**6 Views Available:**
-1. **Dashboard** - Revenue metrics, trend charts, traffic sources
-2. **Revenue Attribution** - Multi-touch attribution analysis
-3. **Content Performance** - Blog posts ranked by revenue
-4. **Email Campaigns** - Campaign ROI and link tracking
-5. **Traffic Sources** - Channel quality scoring + ROAS
-6. **Real-Time Stats** - Live visitor tracking
-
----
-
-## 📚 Documentation
-
-- [Installation Guide](docs/INSTALLATION.md)
-- [REST API Reference](docs/REST_API.md)
-- [Email Tracking](EMAIL_TRACKING.md)
-- [WooCommerce Integration](INTEGRATION.md)
-- [Google Search Console](docs/GSC_SETUP.md)
-- [Security Audit](SECURITY.md)
-- [Performance Benchmarks](PERFORMANCE.md)
-
----
-
-## 🧪 Development
-
-### Build for Development
-```bash
-npm run start  # Watch mode
-```
-
-### Build for Production
-```bash
-npm run build
-```
-
-### Run Tests
-```bash
-# PHP tests
-composer test
-
-# JavaScript tests
-npm test
-```
-
-### Code Standards
-```bash
-# PHP (WordPress Coding Standards)
-composer run phpcs
-
-# JavaScript (ESLint)
-npm run lint
-```
-
----
-
-## 🗺️ Roadmap
-
-### v1.0 (Current)
-- ✅ Core analytics engine
-- ✅ WooCommerce + EDD integration
-- ✅ Email campaign tracking
-- ✅ Google Search Console sync
-- ✅ React dashboard
-
-### v1.1 (Planned)
-- [ ] Multi-site support
-- [ ] Custom event tracking API
-- [ ] Geo-location (privacy-safe)
-- [ ] Email reports (scheduled)
-- [ ] CSV export
-
-### v2.0 (Future)
-- [ ] A/B testing framework
-- [ ] Predictive analytics (ML)
-- [ ] Advanced segmentation
-- [ ] Mobile app
-- [ ] API webhooks
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-This project is licensed under the **GPL v2 or later** - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Credits
-
-**Inspired by:**
-- [DataFa.st](https://datafa.st) - Revenue attribution concept
-- [Burst Statistics](https://github.com/Burst-Statistics/burst-statistics) - Privacy-first analytics
-- [Koko Analytics](https://github.com/ibericode/koko-analytics) - Lightweight tracking
-- [Plausible](https://github.com/plausible/analytics) - Cookieless analytics
-
-**Built by:** [Cristian Raiber](https://github.com/cristianraiber)
-
----
-
-## 📊 Stats
-
-- **Lines of Code:** 15,000+
-- **Documentation:** 150KB+
-- **Components:** 25+ PHP classes, 6 React components
-- **Database Tables:** 6 optimized tables
-- **REST API Endpoints:** 20+
-- **Development Time:** ~60 minutes (6 parallel sub-agents)
-
----
-
-## 🚀 Support
-
-- **Issues:** [GitHub Issues](https://github.com/cristianraiber/data-signals/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/cristianraiber/data-signals/discussions)
-- **Email:** raibercristian@gmail.com
-
----
-
-**⭐ Star this repository if you find it useful!**
-
----
-
-*Privacy-focused. Revenue-driven. WordPress-native.*
+GPL-3.0-or-later

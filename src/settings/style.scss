@@ -1,0 +1,283 @@
+/**
+ * Data Signals Admin Settings
+ */
+
+$max-width: 800px;
+$primary-color: #0085ba;
+$border-color: #e2e4e7;
+$bg-light: #f0f0f1;
+$text-dark: #1e1e1e;
+$text-muted: #757575;
+
+// Main wrapper
+#data-signals-settings {
+	margin-left: -20px;
+	background: $bg-light;
+	min-height: calc(100vh - 32px);
+
+	// Header
+	.ds-settings-header {
+		background: #fff;
+		border-bottom: 1px solid $border-color;
+		padding: 20px;
+		text-align: center;
+	}
+
+	.ds-settings-header-inner {
+		display: inline-flex;
+		align-items: center;
+		gap: 12px;
+	}
+
+	.ds-icon {
+		font-size: 28px;
+	}
+
+	.ds-settings-title {
+		font-size: 24px;
+		font-weight: 600;
+		color: $text-dark;
+	}
+
+	// Toasts
+	.ds-toast-container {
+		position: fixed;
+		top: 16px;
+		right: 16px;
+		z-index: 100000;
+		width: min(420px, calc(100vw - 32px));
+
+		.components-snackbar-list {
+			position: static;
+		}
+
+		.components-snackbar {
+			margin: 0 0 8px 0;
+		}
+	}
+
+	// Content
+	.ds-settings-content {
+		max-width: $max-width;
+		margin: 0 auto;
+		padding: 24px;
+		display: flex;
+		flex-direction: column;
+		gap: 24px;
+	}
+
+	// Settings Card
+	.ds-settings-card {
+		background: #fff;
+		border: 1px solid $border-color;
+		border-radius: 4px;
+		overflow: hidden;
+	}
+
+	.ds-settings-card-header {
+		padding: 16px 20px;
+		border-bottom: 1px solid $border-color;
+		background: #fff;
+
+		h3 {
+			margin: 0;
+			font-size: 14px;
+			font-weight: 600;
+			color: $text-dark;
+			text-transform: none;
+		}
+	}
+
+	.ds-settings-card-body {
+		padding: 20px;
+
+		// DataForm field rows
+		.dataforms-layouts-panel__field-wrapper,
+		.dataforms-layouts-regular__field,
+		.dataforms-layouts-row__field,
+		.dataforms-layouts-card__field {
+			margin-bottom: 10px;
+
+			&:last-child {
+				margin-bottom: 0;
+			}
+		}
+
+		.components-base-control {
+			margin-bottom: 10px;
+		}
+
+		.components-base-control:last-child {
+			margin-bottom: 0;
+		}
+
+		// Field labels
+		.components-base-control__label,
+		.dataforms-layouts-panel__field-label {
+			font-size: 13px;
+			font-weight: 500;
+			color: $text-dark;
+			margin-bottom: 6px;
+		}
+
+		// Field descriptions
+		.components-base-control__help {
+			font-size: 12px;
+			color: $text-muted;
+			margin-top: 4px;
+		}
+
+		// Text inputs
+		.components-text-control__input,
+		.components-textarea-control__input {
+			border: 1px solid #8c8f94;
+			border-radius: 4px;
+			padding: 8px 12px;
+			font-size: 14px;
+
+			&:focus {
+				border-color: $primary-color;
+				box-shadow: 0 0 0 1px $primary-color;
+				outline: none;
+			}
+		}
+
+		// Select inputs
+		.components-select-control__input {
+			border: 1px solid #8c8f94;
+			border-radius: 4px;
+			padding: 8px 12px;
+			font-size: 14px;
+			min-height: 40px;
+		}
+
+		// Toggle controls
+		.components-toggle-control {
+			margin-bottom: 10px;
+
+			.components-base-control__field {
+				display: flex;
+				align-items: center;
+				margin-bottom: 0;
+			}
+
+			.components-form-toggle {
+				margin-right: 12px;
+			}
+
+			.components-toggle-control__label {
+				font-size: 14px;
+				font-weight: 400;
+			}
+
+			.components-base-control__help {
+				margin-inline-start: 12px;
+			}
+		}
+	}
+
+	.ds-settings-card-footer {
+		padding: 16px 20px;
+		border-top: 1px solid $border-color;
+		background: #f9f9f9;
+		display: flex;
+		justify-content: flex-end;
+
+		.components-button.is-primary {
+
+			&.is-busy {
+				background-image: linear-gradient(110deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.06) 40%, rgba(255, 255, 255, 0.18) 80%);
+				background-size: 200% 100%;
+				animation: ds-button-busy 1s linear infinite;
+			}
+		}
+	}
+
+	@keyframes ds-button-busy {
+
+		0% {
+			background-position: 200% 0;
+		}
+
+		100% {
+			background-position: -200% 0;
+		}
+	}
+
+	// Skeleton Loader
+	.ds-skeleton {
+		background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+		background-size: 200% 100%;
+		animation: ds-skeleton-loading 1.5s ease-in-out infinite;
+		border-radius: 4px;
+	}
+
+	@keyframes ds-skeleton-loading {
+
+		0% {
+			background-position: 200% 0;
+		}
+
+		100% {
+			background-position: -200% 0;
+		}
+	}
+
+	.ds-skeleton-logo {
+		width: 32px;
+		height: 32px;
+		border-radius: 6px;
+	}
+
+	.ds-skeleton-title {
+		width: 140px;
+		height: 28px;
+	}
+
+	.ds-skeleton-content {
+		max-width: $max-width;
+		margin: 24px auto;
+		background: #fff;
+		border: 1px solid $border-color;
+		border-radius: 4px;
+		padding: 24px;
+	}
+
+	.ds-skeleton-field {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 20px;
+
+		&:last-child {
+			margin-bottom: 0;
+		}
+	}
+
+	.ds-skeleton-label {
+		width: 180px;
+		height: 18px;
+	}
+
+	.ds-skeleton-toggle {
+		width: 48px;
+		height: 24px;
+		border-radius: 12px;
+	}
+}
+
+// Responsive
+@media (max-width: 782px) {
+
+	#data-signals-settings {
+		margin-left: -10px;
+
+		.ds-settings-content {
+			padding: 16px;
+		}
+
+		.ds-settings-card-body {
+			padding: 16px;
+		}
+	}
+}

@@ -1,17 +1,13 @@
-/**
- * Custom Webpack configuration for Data Signals
- * Extends @wordpress/scripts default configuration
- */
-const defaultConfig = require('@wordpress/scripts/config/webpack.config');
-const path = require('path');
+const defaultConfig = require( '@wordpress/scripts/config/webpack.config' );
+const path = require( 'path' );
 
 module.exports = {
 	...defaultConfig,
 	entry: {
-		index: path.resolve(process.cwd(), 'assets/src/js', 'index.jsx'),
+		'settings/index': path.resolve( __dirname, 'src/settings/index.js' ),
 	},
 	output: {
-		filename: '[name].js',
-		path: path.resolve(process.cwd(), 'assets/build'),
+		...defaultConfig.output,
+		path: path.resolve( __dirname, 'build' ),
 	},
 };

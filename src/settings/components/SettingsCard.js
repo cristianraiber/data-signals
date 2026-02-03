@@ -1,0 +1,70 @@
+/**
+ * Settings Card Component with individual save
+ */
+
+import { __ } from '@wordpress/i18n';
+import { Button, PanelBody, ToggleControl, SelectControl } from '@wordpress/components';
+
+const SettingsCard = ( { title, fields, data, onChange, onSave, saving } ) => {
+	const renderField = ( field ) => {
+		const value = data[ field.id ];
+
+		// Toggle field
+		if ( field.type === 'boolean' ) {
+			return (
+				<ToggleControl
+					key={ field.id }
+					__nextHasNoMarginBottom
+					label={ field.label }
+					help={ field.description }
+					checked={ !! value }
+					onChange={ ( newValue ) =>
+						onChange( { [ field.id ]: newValue } )
+					}
+				/>
+			);
+		}
+
+		// Select field (has elements array)
+		if ( field.elements && field.elements.length > 0 ) {
+			return (
+				<SelectControl
+					key={ field.id }
+					__nextHasNoMarginBottom
+					label={ field.label }
+					help={ field.description }
+					value={ value || '' }
+					options={ field.elements }
+					onChange={ ( newValue ) =>
+						onChange( { [ field.id ]: newValue } )
+					}
+				/>
+			);
+		}
+
+		// Default: text input (not needed for now)
+		return null;
+	};
+
+	return (
+		<div className="ds-settings-card">
+			<PanelBody title={ title } initialOpen={ true }>
+				{ fields.map( renderField ) }
+				<div className="ds-settings-card-footer">
+					<Button
+						variant="primary"
+						onClick={ onSave }
+						isBusy={ saving }
+						disabled={ saving }
+					>
+						{ saving
+							? __( 'Saving…', 'data-signals' )
+							: __( 'Save', 'data-signals' ) }
+					</Button>
+				</div>
+			</PanelBody>
+		</div>
+	);
+};
+
+export default SettingsCard;

@@ -1,29 +1,4 @@
-# Node modules
 node_modules/
-
-# Build output
-assets/build/
-
-# Composer
 vendor/
-
-# WordPress
 *.log
-.htaccess
-
-# IDE
-.vscode/
-.idea/
-*.sublime-*
-
-# OS
 .DS_Store
-Thumbs.db
-
-# NPM
-package-lock.json
-yarn.lock
-
-# Environment
-.env
-.env.local
