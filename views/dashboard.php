@@ -163,6 +163,7 @@ function ds_flag($code) {
     max-width: 1200px;
     margin: 0 auto;
     display: flex;
+    justify-content: center;
     gap: 0;
     padding: 0 24px;
     overflow-x: auto;
