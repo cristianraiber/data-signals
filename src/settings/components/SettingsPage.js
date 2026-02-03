@@ -7,7 +7,6 @@ import { useState, useEffect, useCallback } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
 import { SnackbarList } from '@wordpress/components';
 
-// Import components
 import SettingsCard from './SettingsCard';
 import { trackingFields, retentionFields, dashboardFields } from '../config/fields';
 
@@ -64,8 +63,6 @@ const SettingsPage = () => {
 			};
 
 			setToasts( ( current ) => [ toast, ...current ].slice( 0, 5 ) );
-
-			// Auto-dismiss.
 			setTimeout( () => removeToast( id ), 6000 );
 		},
 		[ removeToast ]

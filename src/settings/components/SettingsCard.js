@@ -3,7 +3,7 @@
  */
 
 import { __ } from '@wordpress/i18n';
-import { Button, PanelBody, ToggleControl, SelectControl } from '@wordpress/components';
+import { Button, ToggleControl, SelectControl } from '@wordpress/components';
 
 const SettingsCard = ( { title, fields, data, onChange, onSave, saving } ) => {
 	const renderField = ( field ) => {
@@ -31,6 +31,7 @@ const SettingsCard = ( { title, fields, data, onChange, onSave, saving } ) => {
 				<SelectControl
 					key={ field.id }
 					__nextHasNoMarginBottom
+					__next40pxDefaultSize
 					label={ field.label }
 					help={ field.description }
 					value={ value || '' }
@@ -42,27 +43,29 @@ const SettingsCard = ( { title, fields, data, onChange, onSave, saving } ) => {
 			);
 		}
 
-		// Default: text input (not needed for now)
 		return null;
 	};
 
 	return (
 		<div className="ds-settings-card">
-			<PanelBody title={ title } initialOpen={ true }>
+			<div className="ds-settings-card-header">
+				<h3>{ title }</h3>
+			</div>
+			<div className="ds-settings-card-body">
 				{ fields.map( renderField ) }
-				<div className="ds-settings-card-footer">
-					<Button
-						variant="primary"
-						onClick={ onSave }
-						isBusy={ saving }
-						disabled={ saving }
-					>
-						{ saving
-							? __( 'Saving…', 'data-signals' )
-							: __( 'Save', 'data-signals' ) }
-					</Button>
-				</div>
-			</PanelBody>
+			</div>
+			<div className="ds-settings-card-footer">
+				<Button
+					variant="primary"
+					onClick={ onSave }
+					isBusy={ saving }
+					disabled={ saving }
+				>
+					{ saving
+						? __( 'Saving…', 'data-signals' )
+						: __( 'Save', 'data-signals' ) }
+				</Button>
+			</div>
 		</div>
 	);
 };
