@@ -36,6 +36,17 @@ export const trackingFields = [
  */
 export const geoFields = [
 	{
+		id: 'maxmind_license_key',
+		label: __( 'MaxMind License Key', 'data-signals' ),
+		type: 'text',
+		Edit: 'input',
+		description: __(
+			'Free license key from maxmind.com. Required for automatic GeoLite2 database downloads.',
+			'data-signals'
+		),
+		placeholder: 'xxxxxxxxxxxxxxxx',
+	},
+	{
 		id: 'geo_use_cloudflare',
 		label: __( 'Use Cloudflare IP Geolocation', 'data-signals' ),
 		type: 'boolean',
@@ -57,11 +68,11 @@ export const geoFields = [
 	},
 	{
 		id: 'geolite2_db_path',
-		label: __( 'GeoLite2 Database Path', 'data-signals' ),
+		label: __( 'GeoLite2 Database Path (Optional)', 'data-signals' ),
 		type: 'text',
 		Edit: 'input',
 		description: __(
-			'Custom path to GeoLite2-Country.mmdb. Leave empty to use default location (wp-content/uploads/data-signals/).',
+			'Custom path to GeoLite2-Country.mmdb. Leave empty for automatic download to wp-content/uploads/data-signals/.',
 			'data-signals'
 		),
 	},

@@ -119,6 +119,13 @@ class Rest {
             'callback' => [$this, 'get_diagnostics'],
             'permission_callback' => [$this, 'check_admin_permission'],
         ]);
+        
+        // GeoLite2 download endpoint
+        register_rest_route($namespace, '/geolite2/download', [
+            'methods' => 'POST',
+            'callback' => [$this, 'download_geolite2'],
+            'permission_callback' => [$this, 'check_admin_permission'],
+        ]);
     }
     
     public function check_permission(): bool {
@@ -260,6 +267,7 @@ class Rest {
             'geo_use_cloudflare',
             'geo_api_fallback',
             'geolite2_db_path',
+            'maxmind_license_key',
         ];
         
         foreach ($allowed as $key) {
@@ -279,13 +287,23 @@ class Rest {
         return new WP_REST_Response([
             'cloudflare' => Geo_Locator::check_cloudflare_status(),
             'geolite2' => Geo_Locator::check_geolite2_status(),
+            'geolite2_updater' => GeoLite2_Updater::get_status(),
             'buffer' => $this->check_buffer_status(),
             'settings' => [
                 'geo_use_cloudflare' => $settings['geo_use_cloudflare'] ?? false,
                 'geo_api_fallback' => $settings['geo_api_fallback'] ?? false,
                 'geolite2_db_path' => $settings['geolite2_db_path'] ?? '',
+                'has_license_key' => !empty($settings['maxmind_license_key']),
             ],
         ]);
+    }
+    
+    public function download_geolite2(WP_REST_Request $request): WP_REST_Response {
+        $result = GeoLite2_Updater::force_download();
+        
+        $status_code = $result['success'] ? 200 : 400;
+        
+        return new WP_REST_Response($result, $status_code);
     }
     
     private function check_buffer_status(): array {

@@ -30,6 +30,9 @@ class Plugin {
         // Initialize fingerprint seed
         Fingerprinter::init_seed();
         
+        // Initialize GeoLite2 updater cron
+        GeoLite2_Updater::init();
+        
         update_option('ds_version', DS_VERSION);
     }
     
@@ -37,6 +40,7 @@ class Plugin {
         wp_clear_scheduled_hook('ds_aggregate_stats');
         wp_clear_scheduled_hook('ds_prune_data');
         wp_clear_scheduled_hook('ds_rotate_seed');
+        GeoLite2_Updater::deactivate();
     }
     
     private static function create_upload_dir(): void {

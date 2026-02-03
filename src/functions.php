@@ -100,6 +100,7 @@ function get_settings(): array {
         'geo_use_cloudflare' => false,
         'geo_api_fallback' => false,
         'geolite2_db_path' => '',
+        'maxmind_license_key' => '',
     ];
     
     // Try new REST API settings first, fallback to old

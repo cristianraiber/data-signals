@@ -2,10 +2,10 @@
  * Main Settings Page Component
  */
 
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { useState, useEffect, useCallback } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
-import { SnackbarList, Notice, Spinner } from '@wordpress/components';
+import { SnackbarList, Button, Spinner } from '@wordpress/components';
 
 import SettingsCard from './SettingsCard';
 import { trackingFields, geoFields, retentionFields, dashboardFields } from '../config/fields';
@@ -54,7 +54,7 @@ const StatusBadge = ( { ok, label } ) => (
 /**
  * Diagnostics Card Component
  */
-const DiagnosticsCard = ( { diagnostics, loading } ) => {
+const DiagnosticsCard = ( { diagnostics, loading, onDownloadGeoLite2, downloading } ) => {
 	if ( loading ) {
 		return (
 			<div className="ds-settings-card">
@@ -72,7 +72,7 @@ const DiagnosticsCard = ( { diagnostics, loading } ) => {
 		return null;
 	}
 
-	const { cloudflare, geolite2, buffer } = diagnostics;
+	const { cloudflare, geolite2, geolite2_updater, buffer, settings } = diagnostics;
 
 	return (
 		<div className="ds-settings-card">
@@ -97,9 +97,31 @@ const DiagnosticsCard = ( { diagnostics, loading } ) => {
 					<div className="ds-diagnostic-value">
 						<StatusBadge ok={ geolite2?.ok } label={ geolite2?.status } />
 						<p className="ds-diagnostic-message">{ geolite2?.message }</p>
-						{ geolite2?.path && (
-							<code className="ds-diagnostic-path">{ geolite2.path }</code>
+						{ geolite2_updater?.db_age_days !== null && (
+							<p className="ds-diagnostic-message">
+								{ sprintf(
+									__( 'Database age: %d days', 'data-signals' ),
+									geolite2_updater.db_age_days
+								) }
+							</p>
 						) }
+						<div style={ { marginTop: '12px' } }>
+							<Button
+								variant="secondary"
+								onClick={ onDownloadGeoLite2 }
+								isBusy={ downloading }
+								disabled={ downloading || ! settings?.has_license_key }
+							>
+								{ downloading
+									? __( 'Downloading…', 'data-signals' )
+									: __( 'Download/Update GeoLite2', 'data-signals' ) }
+							</Button>
+							{ ! settings?.has_license_key && (
+								<p className="ds-diagnostic-message" style={ { marginTop: '8px' } }>
+									{ __( 'Add MaxMind license key in Geolocation settings below.', 'data-signals' ) }
+								</p>
+							) }
+						</div>
 					</div>
 				</div>
 
@@ -126,6 +148,7 @@ const SettingsPage = () => {
 	const [ isLoading, setIsLoading ] = useState( true );
 	const [ diagLoading, setDiagLoading ] = useState( true );
 	const [ saving, setSaving ] = useState( null );
+	const [ downloading, setDownloading ] = useState( false );
 	const [ toasts, setToasts ] = useState( [] );
 
 	const removeToast = useCallback( ( id ) => {
@@ -178,6 +201,24 @@ const SettingsPage = () => {
 		fetchDiagnostics();
 	}, [ fetchSettings, fetchDiagnostics ] );
 
+	const downloadGeoLite2 = async () => {
+		setDownloading( true );
+		try {
+			const response = await apiFetch( {
+				path: '/data-signals/v1/geolite2/download',
+				method: 'POST',
+			} );
+			pushToast( 'success', response.message || __( 'GeoLite2 database updated!', 'data-signals' ) );
+			// Refresh diagnostics
+			fetchDiagnostics();
+		} catch ( error ) {
+			const message = error?.message || __( 'Download failed.', 'data-signals' );
+			pushToast( 'error', message );
+		} finally {
+			setDownloading( false );
+		}
+	};
+
 	const saveSettings = async ( section ) => {
 		setSaving( section );
 		try {
@@ -218,7 +259,12 @@ const SettingsPage = () => {
 			</div>
 
 			<div className="ds-settings-content">
-				<DiagnosticsCard diagnostics={ diagnostics } loading={ diagLoading } />
+				<DiagnosticsCard
+					diagnostics={ diagnostics }
+					loading={ diagLoading }
+					onDownloadGeoLite2={ downloadGeoLite2 }
+					downloading={ downloading }
+				/>
 				
 				<SettingsCard
 					title={ __( 'Tracking Options', 'data-signals' ) }
