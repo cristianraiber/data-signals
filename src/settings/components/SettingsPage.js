@@ -3,12 +3,13 @@
  */
 
 import { __, sprintf } from '@wordpress/i18n';
+/* eslint-disable no-unused-vars */
 import { useState, useEffect, useCallback } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
 import { SnackbarList, Button, Spinner } from '@wordpress/components';
 
 import SettingsCard from './SettingsCard';
-import { trackingFields, geoFields, retentionFields, dashboardFields } from '../config/fields';
+import { gdprFields, gdprInfoItems, trackingFields, geoFields, retentionFields, dashboardFields } from '../config/fields';
 
 /**
  * Loading Skeleton Component
@@ -50,6 +51,52 @@ const StatusBadge = ( { ok, label } ) => (
 		{ ok ? '✓' : '✗' } { label }
 	</span>
 );
+
+/**
+ * GDPR Card Component - shows info only when enabled
+ */
+const GDPRCard = ( { settings, onChange, onSave, saving } ) => {
+	const isEnabled = settings?.gdpr_mode ?? settings?._is_eu ?? false;
+	const detectedCountry = settings?._detected_country || '';
+	const isEU = settings?._is_eu ?? false;
+
+	return (
+		<div className="ds-settings-card">
+			<div className="ds-settings-card-header">
+				<h3>
+					{ __( 'GDPR Compliance', 'data-signals' ) }
+					{ detectedCountry && (
+						<span className="ds-detected-country">
+							{ isEU
+								? sprintf( __( 'Auto-detected: %s (EU)', 'data-signals' ), detectedCountry )
+								: sprintf( __( 'Detected: %s', 'data-signals' ), detectedCountry ) }
+						</span>
+					) }
+				</h3>
+			</div>
+			<div className="ds-settings-card-body">
+				<SettingsCard
+					fields={ gdprFields }
+					data={ settings }
+					onChange={ onChange }
+					onSave={ onSave }
+					saving={ saving }
+					hideHeader
+				/>
+				{ isEnabled && (
+					<div className="ds-gdpr-info">
+						<strong>{ __( 'When enabled:', 'data-signals' ) }</strong>
+						<ul>
+							{ gdprInfoItems.map( ( item, i ) => (
+								<li key={ i }>{ item }</li>
+							) ) }
+						</ul>
+					</div>
+				) }
+			</div>
+		</div>
+	);
+};
 
 /**
  * Diagnostics Card Component
@@ -259,6 +306,13 @@ const SettingsPage = () => {
 			</div>
 
 			<div className="ds-settings-content">
+				<GDPRCard
+					settings={ settings }
+					onChange={ handleChange }
+					onSave={ () => saveSettings( 'gdpr' ) }
+					saving={ saving === 'gdpr' }
+				/>
+				
 				<DiagnosticsCard
 					diagnostics={ diagnostics }
 					loading={ diagLoading }

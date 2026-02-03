@@ -271,66 +271,11 @@ class Admin {
     }
     
     /**
-     * Render GDPR compliance card
+     * Render GDPR compliance card - integrated into settings
      */
     private function render_gdpr_card(): void {
-        // Handle GDPR form submission
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ds_gdpr_nonce']) && wp_verify_nonce($_POST['ds_gdpr_nonce'], 'ds_gdpr_save')) {
-            $settings = get_option('data_signals_settings', []);
-            $settings['gdpr_mode'] = !empty($_POST['gdpr_mode']);
-            update_option('data_signals_settings', $settings);
-            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('GDPR settings saved.', 'data-signals') . '</p></div>';
-        }
-        
-        $settings = get_option('data_signals_settings', []);
-        $gdpr_enabled = $settings['gdpr_mode'] ?? self::is_eu_site();
-        $detected_country = self::detect_site_country();
-        $is_eu = self::is_eu_site();
-        
-        ?>
-        <div class="wrap" style="max-width: 800px;">
-            <form method="post" action="">
-                <?php wp_nonce_field('ds_gdpr_save', 'ds_gdpr_nonce'); ?>
-                
-                <div class="card" style="max-width: 100%; margin: 20px 0 30px; padding: 20px;">
-                    <h2 style="margin-top: 0; display: flex; align-items: center; gap: 10px; font-size: 16px;">
-                        <?php esc_html_e('GDPR Compliance', 'data-signals'); ?>
-                        <?php if ($is_eu): ?>
-                            <span class="description" style="font-size: 12px; font-weight: normal;">
-                                <?php printf(esc_html__('Auto-detected: %s (EU)', 'data-signals'), esc_html($detected_country)); ?>
-                            </span>
-                        <?php else: ?>
-                            <span class="description" style="font-size: 12px; font-weight: normal;">
-                                <?php printf(esc_html__('Detected: %s', 'data-signals'), esc_html($detected_country)); ?>
-                            </span>
-                        <?php endif; ?>
-                    </h2>
-                    <p class="description" style="margin-bottom: 16px;">
-                        <?php esc_html_e('Enable GDPR mode for privacy-compliant analytics. Recommended for EU/EEA sites.', 'data-signals'); ?>
-                    </p>
-                    
-                    <p>
-                        <label>
-                            <input type="checkbox" name="gdpr_mode" value="1" <?php checked($gdpr_enabled); ?>>
-                            <?php esc_html_e('Enable GDPR Mode', 'data-signals'); ?>
-                        </label>
-                        <?php submit_button(__('Save', 'data-signals'), 'secondary', 'submit', false, ['style' => 'margin-left: 12px;']); ?>
-                    </p>
-                    
-                    <div style="margin-top: 16px; padding: 12px; background: #f0f0f1; border-left: 4px solid #2271b1;">
-                        <strong><?php esc_html_e('When enabled:', 'data-signals'); ?></strong>
-                        <ul style="margin: 8px 0 0 20px; line-height: 1.6;">
-                            <li><?php esc_html_e('IP addresses are anonymized before processing', 'data-signals'); ?></li>
-                            <li><?php esc_html_e('Do Not Track (DNT) browser header is respected', 'data-signals'); ?></li>
-                            <li><?php esc_html_e('No cookies are used (fingerprint-based sessions)', 'data-signals'); ?></li>
-                            <li><?php esc_html_e('Session data rotates daily for privacy', 'data-signals'); ?></li>
-                            <li><?php esc_html_e('No personal identifiable information is stored', 'data-signals'); ?></li>
-                        </ul>
-                    </div>
-                </div>
-            </form>
-        </div>
-        <?php
+        // GDPR is now handled via React settings or PHP fallback
+        // This method is kept empty - GDPR toggle moved to main settings
     }
     
     /**

@@ -5,7 +5,7 @@
 import { __ } from '@wordpress/i18n';
 import { Button, ToggleControl, SelectControl, TextControl } from '@wordpress/components';
 
-const SettingsCard = ( { title, fields, data, onChange, onSave, saving } ) => {
+const SettingsCard = ( { title, fields, data, onChange, onSave, saving, hideHeader = false, hideFooter = false } ) => {
 	const renderField = ( field ) => {
 		const value = data[ field.id ];
 
@@ -65,25 +65,29 @@ const SettingsCard = ( { title, fields, data, onChange, onSave, saving } ) => {
 	};
 
 	return (
-		<div className="ds-settings-card">
-			<div className="ds-settings-card-header">
-				<h3>{ title }</h3>
-			</div>
+		<div className={ `ds-settings-card${ hideHeader ? ' ds-settings-card-inline' : '' }` }>
+			{ ! hideHeader && (
+				<div className="ds-settings-card-header">
+					<h3>{ title }</h3>
+				</div>
+			) }
 			<div className="ds-settings-card-body">
 				{ fields.map( renderField ) }
 			</div>
-			<div className="ds-settings-card-footer">
-				<Button
-					variant="primary"
-					onClick={ onSave }
-					isBusy={ saving }
-					disabled={ saving }
-				>
-					{ saving
-						? __( 'Saving…', 'data-signals' )
-						: __( 'Save', 'data-signals' ) }
-				</Button>
-			</div>
+			{ ! hideFooter && (
+				<div className="ds-settings-card-footer">
+					<Button
+						variant="primary"
+						onClick={ onSave }
+						isBusy={ saving }
+						disabled={ saving }
+					>
+						{ saving
+							? __( 'Saving…', 'data-signals' )
+							: __( 'Save', 'data-signals' ) }
+					</Button>
+				</div>
+			) }
 		</div>
 	);
 };

@@ -6,6 +6,33 @@
 import { __ } from '@wordpress/i18n';
 
 /**
+ * Field definitions for GDPR Compliance settings
+ */
+export const gdprFields = [
+	{
+		id: 'gdpr_mode',
+		label: __( 'Enable GDPR Mode', 'data-signals' ),
+		type: 'boolean',
+		Edit: 'toggle',
+		description: __(
+			'Privacy-compliant analytics for EU/EEA sites.',
+			'data-signals'
+		),
+	},
+];
+
+/**
+ * GDPR info items shown when enabled
+ */
+export const gdprInfoItems = [
+	__( 'IP addresses are anonymized before processing', 'data-signals' ),
+	__( 'Do Not Track (DNT) browser header is respected', 'data-signals' ),
+	__( 'No cookies are used (fingerprint-based sessions)', 'data-signals' ),
+	__( 'Session data rotates daily for privacy', 'data-signals' ),
+	__( 'No personal identifiable information is stored', 'data-signals' ),
+];
+
+/**
  * Field definitions for Tracking settings
  */
 export const trackingFields = [
