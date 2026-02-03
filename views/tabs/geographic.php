@@ -38,14 +38,14 @@ $total_visitors = max(1, $totals->visitors);
             <?php if (empty($countries)): ?>
                 <tr>
                     <td colspan="4" class="ds-empty">
-                        <?php esc_html_e('No geographic data yet. Location tracking uses IP geolocation on each request.', 'data-signals'); ?>
+                        <?php esc_html_e('No geographic data yet. Location tracking uses IP geolocation.', 'data-signals'); ?>
                     </td>
                 </tr>
             <?php else: ?>
                 <?php foreach ($countries as $country): ?>
                     <tr>
                         <td>
-                            <span style="margin-right: 8px;"><?php echo ds_flag($country->country_code); ?></span>
+                            <span style="margin-right: 6px;"><?php echo ds_flag($country->country_code); ?></span>
                             <?php echo esc_html($country->country_name ?: $country->country_code); ?>
                         </td>
                         <td class="num"><?php echo number_format_i18n($country->visitors); ?></td>
@@ -74,7 +74,7 @@ $total_visitors = max(1, $totals->visitors);
                 <div class="ds-bar-row">
                     <span class="ds-bar-label">
                         <?php echo ds_flag($country->country_code); ?> 
-                        <?php echo esc_html(substr($country->country_name ?: $country->country_code, 0, 10)); ?>
+                        <?php echo esc_html(substr($country->country_name ?: $country->country_code, 0, 12)); ?>
                     </span>
                     <div class="ds-bar-track">
                         <div class="ds-bar-fill" style="width: <?php echo $pct; ?>%"></div>

@@ -37,21 +37,21 @@ $total = max(1, $dt->total);
             <div class="ds-bar-row">
                 <span class="ds-bar-label"><?php esc_html_e('Desktop', 'data-signals'); ?></span>
                 <div class="ds-bar-track">
-                    <div class="ds-bar-fill desktop" style="width: <?php echo ds_percent($dt->desktop, $total); ?>"></div>
+                    <div class="ds-bar-fill" style="width: <?php echo ds_percent($dt->desktop, $total); ?>"></div>
                 </div>
                 <span class="ds-bar-value"><?php echo number_format_i18n($dt->desktop); ?></span>
             </div>
             <div class="ds-bar-row">
                 <span class="ds-bar-label"><?php esc_html_e('Mobile', 'data-signals'); ?></span>
                 <div class="ds-bar-track">
-                    <div class="ds-bar-fill mobile" style="width: <?php echo ds_percent($dt->mobile, $total); ?>"></div>
+                    <div class="ds-bar-fill secondary" style="width: <?php echo ds_percent($dt->mobile, $total); ?>"></div>
                 </div>
                 <span class="ds-bar-value"><?php echo number_format_i18n($dt->mobile); ?></span>
             </div>
             <div class="ds-bar-row">
                 <span class="ds-bar-label"><?php esc_html_e('Tablet', 'data-signals'); ?></span>
                 <div class="ds-bar-track">
-                    <div class="ds-bar-fill tablet" style="width: <?php echo ds_percent($dt->tablet, $total); ?>"></div>
+                    <div class="ds-bar-fill tertiary" style="width: <?php echo ds_percent($dt->tablet, $total); ?>"></div>
                 </div>
                 <span class="ds-bar-value"><?php echo number_format_i18n($dt->tablet); ?></span>
             </div>

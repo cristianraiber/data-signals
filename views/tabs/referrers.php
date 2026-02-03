@@ -40,9 +40,8 @@ $total_referred = array_sum(array_column($referrers, 'visitors')) ?: 0;
             $max_ref = !empty($top5) ? max(array_column($top5, 'visitors')) : 1;
             foreach ($top5 as $ref): 
                 $pct = ($ref->visitors / $max_ref) * 100;
-                // Shorten display label
                 $label = preg_replace('/^https?:\/\//', '', $ref->url);
-                $label = strlen($label) > 25 ? substr($label, 0, 22) . '...' : $label;
+                $label = strlen($label) > 20 ? substr($label, 0, 17) . '...' : $label;
             ?>
                 <div class="ds-bar-row">
                     <span class="ds-bar-label" title="<?php echo esc_attr($ref->url); ?>">
@@ -76,7 +75,7 @@ $total_referred = array_sum(array_column($referrers, 'visitors')) ?: 0;
             <?php if (empty($referrers)): ?>
                 <tr>
                     <td colspan="4" class="ds-empty">
-                        <?php esc_html_e('No referrer data yet. Referrers are tracked when visitors come from external sites.', 'data-signals'); ?>
+                        <?php esc_html_e('No referrer data yet.', 'data-signals'); ?>
                     </td>
                 </tr>
             <?php else: ?>

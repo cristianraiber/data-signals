@@ -70,16 +70,16 @@ $total_campaign_visitors = array_sum(array_column($campaigns, 'visitors')) ?: 1;
             <?php if (empty($campaigns)): ?>
                 <tr>
                     <td colspan="5" class="ds-empty">
-                        <?php esc_html_e('No campaign data yet. Use UTM parameters (utm_source, utm_medium, utm_campaign) in your links.', 'data-signals'); ?>
+                        <?php esc_html_e('No campaign data yet. Use UTM parameters in your links.', 'data-signals'); ?>
                     </td>
                 </tr>
             <?php else: ?>
                 <?php foreach ($campaigns as $c): ?>
                     <tr>
-                        <td><?php echo esc_html($c->utm_source ?: '—'); ?></td>
-                        <td><?php echo esc_html($c->utm_medium ?: '—'); ?></td>
+                        <td><?php echo esc_html($c->utm_source ?: '–'); ?></td>
+                        <td><?php echo esc_html($c->utm_medium ?: '–'); ?></td>
                         <td class="url" title="<?php echo esc_attr($c->utm_campaign); ?>">
-                            <?php echo esc_html($c->utm_campaign ?: '—'); ?>
+                            <?php echo esc_html($c->utm_campaign ?: '–'); ?>
                         </td>
                         <td class="num"><?php echo number_format_i18n($c->visitors); ?></td>
                         <td class="num"><?php echo number_format_i18n($c->pageviews); ?></td>
@@ -90,16 +90,10 @@ $total_campaign_visitors = array_sum(array_column($campaigns, 'visitors')) ?: 1;
     </table>
 </div>
 
-<div class="ds-card" style="background: #f7f7f7; border: 1px dashed var(--ds-border);">
-    <div class="ds-card-body">
-        <h4 style="margin: 0 0 12px; font-size: 14px;">
-            <?php esc_html_e('📝 How to use UTM tracking', 'data-signals'); ?>
-        </h4>
-        <p style="margin: 0 0 8px; color: var(--ds-text-muted); font-size: 14px;">
-            <?php esc_html_e('Add UTM parameters to your links to track campaigns:', 'data-signals'); ?>
-        </p>
-        <code style="display: block; padding: 12px; background: #fff; border: 1px solid var(--ds-border); border-radius: 4px; font-size: 12px; overflow-x: auto;">
-            https://yoursite.com/?utm_source=facebook&utm_medium=social&utm_campaign=summer-sale
-        </code>
-    </div>
+<div class="ds-card ds-info-box" style="margin-top: 20px;">
+    <h4><?php esc_html_e('How to use UTM tracking', 'data-signals'); ?></h4>
+    <p><?php esc_html_e('Add UTM parameters to your links to track campaigns:', 'data-signals'); ?></p>
+    <code style="display: block; padding: 10px; background: #fff; border: 1px solid var(--ds-border); border-radius: 3px; font-size: 12px; margin-top: 10px; overflow-x: auto;">
+        https://yoursite.com/?utm_source=facebook&amp;utm_medium=social&amp;utm_campaign=summer-sale
+    </code>
 </div>

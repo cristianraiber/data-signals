@@ -22,8 +22,7 @@ $pages_per_visit = $totals->visitors > 0 ? $totals->pageviews / $totals->visitor
         <div class="value"><?php echo number_format_i18n($totals->visitors); ?></div>
         <?php if ($visitors_change != 0): ?>
             <div class="change <?php echo $visitors_change > 0 ? 'positive' : 'negative'; ?>">
-                <?php echo ($visitors_change > 0 ? '↑' : '↓'); ?> 
-                <?php echo abs($visitors_change); ?>%
+                <?php echo ($visitors_change > 0 ? '+' : '') . $visitors_change; ?>%
             </div>
         <?php endif; ?>
     </div>
@@ -33,8 +32,7 @@ $pages_per_visit = $totals->visitors > 0 ? $totals->pageviews / $totals->visitor
         <div class="value"><?php echo number_format_i18n($totals->pageviews); ?></div>
         <?php if ($pageviews_change != 0): ?>
             <div class="change <?php echo $pageviews_change > 0 ? 'positive' : 'negative'; ?>">
-                <?php echo ($pageviews_change > 0 ? '↑' : '↓'); ?> 
-                <?php echo abs($pageviews_change); ?>%
+                <?php echo ($pageviews_change > 0 ? '+' : '') . $pageviews_change; ?>%
             </div>
         <?php endif; ?>
     </div>
@@ -49,10 +47,10 @@ $pages_per_visit = $totals->visitors > 0 ? $totals->pageviews / $totals->visitor
 <!-- Traffic Chart -->
 <div class="ds-card">
     <div class="ds-card-header">
-        <h3>📈 <?php esc_html_e('Traffic Overview', 'data-signals'); ?></h3>
+        <h3><?php esc_html_e('Traffic Overview', 'data-signals'); ?></h3>
     </div>
     <div class="ds-card-body ds-chart">
-        <canvas id="ds-chart" height="300"></canvas>
+        <canvas id="ds-chart" height="280"></canvas>
     </div>
 </div>
 
@@ -61,7 +59,7 @@ $pages_per_visit = $totals->visitors > 0 ? $totals->pageviews / $totals->visitor
     <!-- Top Pages -->
     <div class="ds-card">
         <div class="ds-card-header">
-            <h3>📄 <?php esc_html_e('Top Pages', 'data-signals'); ?></h3>
+            <h3><?php esc_html_e('Top Pages', 'data-signals'); ?></h3>
         </div>
         <table class="ds-table">
             <thead>
@@ -73,7 +71,7 @@ $pages_per_visit = $totals->visitors > 0 ? $totals->pageviews / $totals->visitor
             </thead>
             <tbody>
                 <?php if (empty($pages)): ?>
-                    <tr><td colspan="3" class="ds-empty"><?php esc_html_e('No data yet. Start tracking to see your top pages.', 'data-signals'); ?></td></tr>
+                    <tr><td colspan="3" class="ds-empty"><?php esc_html_e('No data yet.', 'data-signals'); ?></td></tr>
                 <?php else: ?>
                     <?php foreach ($pages as $page): ?>
                         <tr>
@@ -94,7 +92,7 @@ $pages_per_visit = $totals->visitors > 0 ? $totals->pageviews / $totals->visitor
     <!-- Top Referrers -->
     <div class="ds-card">
         <div class="ds-card-header">
-            <h3>🔗 <?php esc_html_e('Top Referrers', 'data-signals'); ?></h3>
+            <h3><?php esc_html_e('Top Referrers', 'data-signals'); ?></h3>
         </div>
         <table class="ds-table">
             <thead>
@@ -128,6 +126,7 @@ $pages_per_visit = $totals->visitors > 0 ? $totals->pageviews / $totals->visitor
 (function() {
     var ctx = document.getElementById('ds-chart').getContext('2d');
     var data = <?php echo wp_json_encode($chart_data); ?>;
+    var primary = getComputedStyle(document.getElementById('ds-dashboard')).getPropertyValue('--ds-primary').trim();
     
     new Chart(ctx, {
         type: 'bar',
@@ -140,18 +139,18 @@ $pages_per_visit = $totals->visitors > 0 ? $totals->pageviews / $totals->visitor
                 {
                     label: '<?php echo esc_js(__('Visitors', 'data-signals')); ?>',
                     data: data.map(function(d) { return d.visitors; }),
-                    backgroundColor: 'rgba(79, 70, 229, 0.85)',
-                    borderRadius: 4,
+                    backgroundColor: primary || '#2271b1',
+                    borderRadius: 3,
                     yAxisID: 'y',
-                    barPercentage: 0.7,
+                    barPercentage: 0.6,
                 },
                 {
                     label: '<?php echo esc_js(__('Pageviews', 'data-signals')); ?>',
                     data: data.map(function(d) { return d.pageviews; }),
-                    backgroundColor: 'rgba(6, 182, 212, 0.7)',
-                    borderRadius: 4,
+                    backgroundColor: 'rgba(0, 163, 42, 0.7)',
+                    borderRadius: 3,
                     yAxisID: 'y1',
-                    barPercentage: 0.7,
+                    barPercentage: 0.6,
                 }
             ]
         },
@@ -165,37 +164,37 @@ $pages_per_visit = $totals->visitors > 0 ? $totals->pageviews / $totals->visitor
                     align: 'end',
                     labels: {
                         usePointStyle: true,
-                        pointStyle: 'rectRounded',
-                        padding: 20,
-                        font: { size: 12, weight: 500 }
+                        pointStyle: 'rect',
+                        padding: 16,
+                        font: { size: 12 }
                     }
                 },
                 tooltip: {
-                    backgroundColor: '#111827',
-                    titleFont: { size: 13, weight: 600 },
+                    backgroundColor: '#1d2327',
+                    titleFont: { size: 12 },
                     bodyFont: { size: 12 },
-                    padding: 12,
-                    cornerRadius: 8,
+                    padding: 10,
+                    cornerRadius: 4,
                 }
             },
             scales: {
                 x: {
                     grid: { display: false },
-                    ticks: { font: { size: 11 }, color: '#6B7280' }
+                    ticks: { font: { size: 11 }, color: '#646970' }
                 },
                 y: {
                     type: 'linear',
                     position: 'left',
                     beginAtZero: true,
-                    grid: { color: '#E5E7EB', drawBorder: false },
-                    ticks: { font: { size: 11 }, color: '#6B7280' }
+                    grid: { color: '#e2e4e7', drawBorder: false },
+                    ticks: { font: { size: 11 }, color: '#646970' }
                 },
                 y1: {
                     type: 'linear',
                     position: 'right',
                     beginAtZero: true,
                     grid: { drawOnChartArea: false },
-                    ticks: { font: { size: 11 }, color: '#6B7280' }
+                    ticks: { font: { size: 11 }, color: '#646970' }
                 }
             }
         }

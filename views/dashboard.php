@@ -16,30 +16,30 @@ function ds_percent($value, $total) {
 
 // Helper for country flag emoji
 function ds_flag($code) {
-    if (empty($code) || strlen($code) !== 2) return '🌍';
+    if (empty($code) || strlen($code) !== 2) return '';
     $code = strtoupper($code);
     return implode('', array_map(fn($c) => mb_chr(ord($c) - ord('A') + 0x1F1E6), str_split($code)));
 }
 ?>
 
 <style>
-:root {
-    --ds-primary: #4F46E5;
-    --ds-primary-dark: #4338CA;
-    --ds-secondary: #06B6D4;
-    --ds-success: #10B981;
-    --ds-warning: #F59E0B;
-    --ds-danger: #EF4444;
-    --ds-border: #E5E7EB;
-    --ds-border-dark: #D1D5DB;
-    --ds-bg: #F9FAFB;
-    --ds-bg-card: #FFFFFF;
-    --ds-text: #111827;
-    --ds-text-muted: #6B7280;
-    --ds-text-light: #9CA3AF;
-    --ds-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
-    --ds-shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-    --ds-radius: 8px;
+#ds-dashboard {
+    --ds-primary: var(--wp-admin-theme-color, #2271b1);
+    --ds-primary-hover: var(--wp-admin-theme-color-darker-10, #135e96);
+    --ds-primary-active: var(--wp-admin-theme-color-darker-20, #0a4b78);
+    --ds-success: #00a32a;
+    --ds-warning: #dba617;
+    --ds-danger: #d63638;
+    --ds-border: #c3c4c7;
+    --ds-border-light: #e2e4e7;
+    --ds-bg: #f0f0f1;
+    --ds-bg-card: #fff;
+    --ds-text: #1d2327;
+    --ds-text-muted: #646970;
+    --ds-text-light: #8c8f94;
+    --ds-shadow: 0 1px 1px rgba(0,0,0,.04);
+    --ds-shadow-md: 0 1px 3px rgba(0,0,0,.1);
+    --ds-radius: 4px;
 }
 
 * { box-sizing: border-box; }
@@ -53,29 +53,14 @@ function ds_flag($code) {
 
 /* Header */
 .ds-header {
-    background: linear-gradient(135deg, var(--ds-primary) 0%, #7C3AED 100%);
+    background: var(--ds-primary);
     padding: 0;
-    position: relative;
-    overflow: hidden;
-}
-
-.ds-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-    opacity: 0.5;
 }
 
 .ds-header-inner {
-    position: relative;
-    z-index: 1;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 24px;
+    padding: 20px 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -84,16 +69,15 @@ function ds_flag($code) {
 .ds-header-left {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
 }
 
 .ds-logo {
-    width: 48px;
-    height: 48px;
-    background: rgba(255,255,255,0.15);
-    border-radius: 12px;
-    padding: 8px;
-    backdrop-filter: blur(8px);
+    width: 36px;
+    height: 36px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 6px;
+    padding: 6px;
 }
 
 .ds-logo img {
@@ -108,61 +92,57 @@ function ds_flag($code) {
 
 .ds-header-title h1 {
     margin: 0;
-    font-size: 24px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
+    font-size: 20px;
+    font-weight: 600;
 }
 
 .ds-header-title .ds-version {
-    font-size: 12px;
-    opacity: 0.7;
+    font-size: 11px;
+    opacity: 0.8;
     margin-top: 2px;
 }
 
 .ds-header-right {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
 }
 
 .ds-realtime {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     background: rgba(255,255,255,0.15);
-    backdrop-filter: blur(8px);
-    padding: 10px 16px;
+    padding: 8px 14px;
     border-radius: var(--ds-radius);
     color: #fff;
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 13px;
 }
 
 .ds-realtime .dot {
     width: 8px;
     height: 8px;
-    background: var(--ds-success);
+    background: #68de7c;
     border-radius: 50%;
-    box-shadow: 0 0 8px var(--ds-success);
     animation: ds-pulse 2s infinite;
 }
 
 @keyframes ds-pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.7; transform: scale(1.2); }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }
 
 .ds-settings-link {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     background: rgba(255,255,255,0.15);
     border-radius: var(--ds-radius);
     color: #fff;
     text-decoration: none;
-    transition: background 0.2s;
+    transition: background 0.15s;
 }
 
 .ds-settings-link:hover {
@@ -191,13 +171,13 @@ function ds_flag($code) {
 .ds-nav a {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 16px 20px;
+    gap: 6px;
+    padding: 14px 18px;
     text-decoration: none;
     color: var(--ds-text-muted);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
-    border-bottom: 2px solid transparent;
+    border-bottom: 3px solid transparent;
     margin-bottom: -1px;
     white-space: nowrap;
     transition: all 0.15s;
@@ -214,7 +194,10 @@ function ds_flag($code) {
 }
 
 .ds-nav-icon {
-    font-size: 16px;
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+    opacity: 0.7;
 }
 
 /* Content */
@@ -229,7 +212,7 @@ function ds_flag($code) {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
     gap: 12px;
 }
 
@@ -242,12 +225,12 @@ function ds_flag($code) {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 10px 16px;
+    padding: 0 12px;
+    height: 30px;
     background: var(--ds-bg-card);
-    border: 1px solid var(--ds-border-dark);
+    border: 1px solid var(--ds-border);
     border-radius: var(--ds-radius);
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 13px;
     color: var(--ds-text);
     cursor: pointer;
     transition: all 0.15s;
@@ -256,6 +239,7 @@ function ds_flag($code) {
 .ds-export-btn:hover {
     background: var(--ds-bg);
     border-color: var(--ds-primary);
+    color: var(--ds-primary);
 }
 
 .ds-export-menu {
@@ -268,7 +252,7 @@ function ds_flag($code) {
     border: 1px solid var(--ds-border);
     border-radius: var(--ds-radius);
     box-shadow: var(--ds-shadow-md);
-    min-width: 160px;
+    min-width: 150px;
     z-index: 100;
     overflow: hidden;
 }
@@ -279,10 +263,10 @@ function ds_flag($code) {
 
 .ds-export-menu a {
     display: block;
-    padding: 10px 16px;
+    padding: 8px 14px;
     color: var(--ds-text);
     text-decoration: none;
-    font-size: 14px;
+    font-size: 13px;
     transition: background 0.1s;
 }
 
@@ -299,104 +283,86 @@ function ds_flag($code) {
 
 .ds-date-picker select,
 .ds-date-picker input[type="date"] {
-    padding: 10px 14px;
-    border: 1px solid var(--ds-border-dark);
+    padding: 0 8px;
+    height: 30px;
+    border: 1px solid var(--ds-border);
     border-radius: var(--ds-radius);
-    font-size: 14px;
-    min-height: 42px;
+    font-size: 13px;
     background: var(--ds-bg-card);
     color: var(--ds-text);
     cursor: pointer;
-    transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .ds-date-picker select:focus,
 .ds-date-picker input[type="date"]:focus {
     border-color: var(--ds-primary);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    box-shadow: 0 0 0 1px var(--ds-primary);
     outline: none;
 }
 
 .ds-date-picker .button {
-    min-height: 42px;
-    padding: 10px 20px;
-    background: var(--ds-primary);
-    color: #fff;
-    border: none;
-    border-radius: var(--ds-radius);
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-.ds-date-picker .button:hover {
-    background: var(--ds-primary-dark);
+    height: 30px;
+    padding: 0 12px;
 }
 
 /* Stats Cards */
 .ds-stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 20px;
-    margin-bottom: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
 }
 
 .ds-stat-card {
     background: var(--ds-bg-card);
-    padding: 24px;
+    padding: 20px;
     border-radius: var(--ds-radius);
     box-shadow: var(--ds-shadow);
-    border: 1px solid var(--ds-border);
-    transition: box-shadow 0.2s, transform 0.2s;
-}
-
-.ds-stat-card:hover {
-    box-shadow: var(--ds-shadow-md);
-    transform: translateY(-2px);
+    border: 1px solid var(--ds-border-light);
 }
 
 .ds-stat-card h3 {
-    margin: 0 0 12px;
-    font-size: 12px;
+    margin: 0 0 8px;
+    font-size: 11px;
     color: var(--ds-text-muted);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
 }
 
 .ds-stat-card .value {
-    font-size: 36px;
-    font-weight: 700;
+    font-size: 32px;
+    font-weight: 600;
     color: var(--ds-text);
     line-height: 1.1;
     font-variant-numeric: tabular-nums;
 }
 
 .ds-stat-card .sub {
-    font-size: 13px;
+    font-size: 12px;
     color: var(--ds-text-muted);
-    margin-top: 6px;
+    margin-top: 4px;
 }
 
 .ds-stat-card .change {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    font-size: 13px;
-    margin-top: 12px;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-weight: 600;
+    gap: 3px;
+    font-size: 12px;
+    margin-top: 8px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 500;
 }
 
 .ds-stat-card .change.positive {
     color: var(--ds-success);
-    background: rgba(16, 185, 129, 0.1);
+    background: rgba(0, 163, 42, 0.1);
 }
 
 .ds-stat-card .change.negative {
     color: var(--ds-danger);
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(214, 54, 56, 0.1);
 }
 
 /* Cards */
@@ -404,14 +370,14 @@ function ds_flag($code) {
     background: var(--ds-bg-card);
     border-radius: var(--ds-radius);
     box-shadow: var(--ds-shadow);
-    border: 1px solid var(--ds-border);
-    margin-bottom: 24px;
+    border: 1px solid var(--ds-border-light);
+    margin-bottom: 20px;
     overflow: hidden;
 }
 
 .ds-card-header {
-    padding: 18px 24px;
-    border-bottom: 1px solid var(--ds-border);
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--ds-border-light);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -419,24 +385,24 @@ function ds_flag($code) {
 
 .ds-card-header h3 {
     margin: 0;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--ds-text);
 }
 
 .ds-card-body {
-    padding: 24px;
+    padding: 20px;
 }
 
 .ds-chart {
-    min-height: 320px;
+    min-height: 300px;
 }
 
 /* Tables Grid */
 .ds-tables {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 20px;
 }
 
 /* Tables */
@@ -447,9 +413,9 @@ function ds_flag($code) {
 
 .ds-table th,
 .ds-table td {
-    padding: 14px 24px;
+    padding: 12px 20px;
     text-align: left;
-    border-bottom: 1px solid var(--ds-border);
+    border-bottom: 1px solid var(--ds-border-light);
 }
 
 .ds-table th {
@@ -457,23 +423,22 @@ function ds_flag($code) {
     color: var(--ds-text-muted);
     font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
     background: var(--ds-bg);
 }
 
 .ds-table td {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--ds-text);
 }
 
 .ds-table td.num {
     text-align: right;
     font-variant-numeric: tabular-nums;
-    font-weight: 500;
 }
 
 .ds-table .url {
-    max-width: 300px;
+    max-width: 280px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -482,7 +447,6 @@ function ds_flag($code) {
 .ds-table a {
     color: var(--ds-primary);
     text-decoration: none;
-    font-weight: 500;
 }
 
 .ds-table a:hover {
@@ -505,60 +469,93 @@ function ds_flag($code) {
     color: var(--ds-text-light);
     font-style: italic;
     text-align: center;
-    padding: 40px !important;
+    padding: 30px !important;
 }
 
 /* Bar Charts */
 .ds-bar-chart {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
 }
 
 .ds-bar-row {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
 }
 
 .ds-bar-label {
-    width: 120px;
-    font-size: 14px;
+    width: 100px;
+    font-size: 13px;
     font-weight: 500;
     color: var(--ds-text);
     flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .ds-bar-track {
     flex: 1;
-    height: 28px;
+    height: 24px;
     background: var(--ds-bg);
-    border-radius: 6px;
+    border-radius: 3px;
     overflow: hidden;
 }
 
 .ds-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--ds-primary), var(--ds-secondary));
-    border-radius: 6px;
-    transition: width 0.5s ease;
+    background: var(--ds-primary);
+    border-radius: 3px;
+    transition: width 0.4s ease;
 }
 
-.ds-bar-fill.mobile {
-    background: linear-gradient(90deg, var(--ds-success), #34D399);
+.ds-bar-fill.secondary {
+    background: var(--ds-success);
 }
 
-.ds-bar-fill.tablet {
-    background: linear-gradient(90deg, var(--ds-warning), #FBBF24);
+.ds-bar-fill.tertiary {
+    background: var(--ds-warning);
 }
 
 .ds-bar-value {
-    width: 80px;
+    width: 70px;
     text-align: right;
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 500;
     font-variant-numeric: tabular-nums;
     color: var(--ds-text);
+}
+
+/* Info Box */
+.ds-info-box {
+    background: var(--ds-bg);
+    border: 1px dashed var(--ds-border);
+    border-radius: var(--ds-radius);
+    padding: 16px 20px;
+}
+
+.ds-info-box h4 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ds-text);
+}
+
+.ds-info-box p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--ds-text-muted);
+    line-height: 1.5;
+}
+
+.ds-info-box ul {
+    margin: 10px 0 0;
+    padding-left: 18px;
+    font-size: 13px;
+    color: var(--ds-text-muted);
+    line-height: 1.7;
 }
 
 /* Responsive */
@@ -569,12 +566,14 @@ function ds_flag($code) {
     
     .ds-header-inner {
         flex-direction: column;
-        gap: 16px;
+        gap: 12px;
         text-align: center;
+        padding: 16px;
     }
     
     .ds-header-left {
         flex-direction: column;
+        gap: 8px;
     }
     
     .ds-content {
@@ -586,7 +585,7 @@ function ds_flag($code) {
     }
     
     .ds-stat-card .value {
-        font-size: 28px;
+        font-size: 26px;
     }
     
     .ds-nav-inner {
@@ -594,7 +593,16 @@ function ds_flag($code) {
     }
     
     .ds-toolbar {
-        justify-content: center;
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .ds-export-dropdown {
+        order: 2;
+    }
+    
+    .ds-date-picker {
+        justify-content: flex-end;
     }
 }
 </style>
@@ -609,7 +617,7 @@ function ds_flag($code) {
                 </div>
                 <div class="ds-header-title">
                     <h1>Data Signals</h1>
-                    <div class="ds-version">v<?php echo esc_html(DS_VERSION); ?> • Privacy-first Analytics</div>
+                    <div class="ds-version">v<?php echo esc_html(DS_VERSION); ?></div>
                 </div>
             </div>
             <div class="ds-header-right">
@@ -618,7 +626,7 @@ function ds_flag($code) {
                     <span><strong><?php echo number_format_i18n($realtime); ?></strong> <?php esc_html_e('visitors now', 'data-signals'); ?></span>
                 </div>
                 <a href="<?php echo esc_url(admin_url('admin.php?page=data-signals-settings')); ?>" class="ds-settings-link" title="<?php esc_attr_e('Settings', 'data-signals'); ?>">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
                     </svg>
                 </a>
@@ -629,20 +637,9 @@ function ds_flag($code) {
     <!-- Navigation -->
     <nav class="ds-nav">
         <div class="ds-nav-inner">
-            <?php 
-            $tab_icons = [
-                'overview' => '📊',
-                'devices' => '💻',
-                'geographic' => '🌍',
-                'campaigns' => '📣',
-                'referrers' => '🔗',
-                'clicks' => '👆',
-            ];
-            foreach ($tabs as $key => $label): 
-            ?>
+            <?php foreach ($tabs as $key => $label): ?>
                 <a href="<?php echo esc_url(add_query_arg(['tab' => $key, 'view' => $range], $dashboard_url)); ?>" 
                    class="<?php echo $tab === $key ? 'active' : ''; ?>">
-                    <span class="ds-nav-icon"><?php echo $tab_icons[$key] ?? '📈'; ?></span>
                     <?php echo esc_html($label); ?>
                 </a>
             <?php endforeach; ?>
@@ -655,8 +652,8 @@ function ds_flag($code) {
         <div class="ds-toolbar">
             <div class="ds-export-dropdown">
                 <button type="button" class="ds-export-btn" onclick="this.nextElementSibling.classList.toggle('show')">
-                    📥 <?php esc_html_e('Export CSV', 'data-signals'); ?>
-                    <span style="margin-left: 4px;">▾</span>
+                    <?php esc_html_e('Export CSV', 'data-signals'); ?>
+                    <span>&#9662;</span>
                 </button>
                 <div class="ds-export-menu">
                     <?php
@@ -696,7 +693,7 @@ function ds_flag($code) {
                 
                 <?php if ($range === 'custom'): ?>
                     <input type="date" name="start_date" value="<?php echo esc_attr($date_start->format('Y-m-d')); ?>">
-                    <span style="color: var(--ds-text-muted);">→</span>
+                    <span style="color: var(--ds-text-muted);">–</span>
                     <input type="date" name="end_date" value="<?php echo esc_attr($date_end->format('Y-m-d')); ?>">
                     <button type="submit" class="button"><?php esc_html_e('Apply', 'data-signals'); ?></button>
                 <?php endif; ?>
