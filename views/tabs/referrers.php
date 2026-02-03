@@ -48,7 +48,7 @@ $total_referred = array_sum(array_column($referrers, 'visitors')) ?: 0;
                         <?php echo esc_html($label); ?>
                     </span>
                     <div class="ds-bar-track">
-                        <div class="ds-bar-fill" style="width: <?php echo $pct; ?>%"></div>
+                        <div class="ds-bar-fill" style="width: <?php echo esc_attr($pct); ?>%"></div>
                     </div>
                     <span class="ds-bar-value"><?php echo number_format_i18n($ref->visitors); ?></span>
                 </div>

@@ -52,7 +52,7 @@ $ct = $click_totals;
                         <?php echo esc_html(substr($domain->domain, 0, 20)); ?>
                     </span>
                     <div class="ds-bar-track">
-                        <div class="ds-bar-fill" style="width: <?php echo $pct; ?>%"></div>
+                        <div class="ds-bar-fill" style="width: <?php echo esc_attr($pct); ?>%"></div>
                     </div>
                     <span class="ds-bar-value"><?php echo number_format_i18n($domain->clicks); ?></span>
                 </div>

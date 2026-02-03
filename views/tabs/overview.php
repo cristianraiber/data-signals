@@ -21,7 +21,7 @@ $pages_per_visit = $totals->visitors > 0 ? $totals->pageviews / $totals->visitor
         <h3><?php esc_html_e('Total Visitors', 'data-signals'); ?></h3>
         <div class="value"><?php echo number_format_i18n($totals->visitors); ?></div>
         <?php if ($visitors_change != 0): ?>
-            <div class="change <?php echo $visitors_change > 0 ? 'positive' : 'negative'; ?>">
+            <div class="change <?php echo esc_attr($visitors_change > 0 ? 'positive' : 'negative'); ?>">
                 <?php echo ($visitors_change > 0 ? '+' : '') . $visitors_change; ?>%
             </div>
         <?php endif; ?>
@@ -31,7 +31,7 @@ $pages_per_visit = $totals->visitors > 0 ? $totals->pageviews / $totals->visitor
         <h3><?php esc_html_e('Total Pageviews', 'data-signals'); ?></h3>
         <div class="value"><?php echo number_format_i18n($totals->pageviews); ?></div>
         <?php if ($pageviews_change != 0): ?>
-            <div class="change <?php echo $pageviews_change > 0 ? 'positive' : 'negative'; ?>">
+            <div class="change <?php echo esc_attr($pageviews_change > 0 ? 'positive' : 'negative'); ?>">
                 <?php echo ($pageviews_change > 0 ? '+' : '') . $pageviews_change; ?>%
             </div>
         <?php endif; ?>

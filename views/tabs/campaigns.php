@@ -42,7 +42,7 @@ $total_campaign_visitors = array_sum(array_column($campaigns, 'visitors')) ?: 1;
                 <div class="ds-bar-row">
                     <span class="ds-bar-label"><?php echo esc_html(ucfirst($source->source)); ?></span>
                     <div class="ds-bar-track">
-                        <div class="ds-bar-fill" style="width: <?php echo $pct; ?>%"></div>
+                        <div class="ds-bar-fill" style="width: <?php echo esc_attr($pct); ?>%"></div>
                     </div>
                     <span class="ds-bar-value"><?php echo number_format_i18n($source->visitors); ?></span>
                 </div>

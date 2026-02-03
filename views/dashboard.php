@@ -640,7 +640,7 @@ function ds_flag($code) {
         <div class="ds-nav-inner">
             <?php foreach ($tabs as $key => $label): ?>
                 <a href="<?php echo esc_url(add_query_arg(['tab' => $key, 'view' => $range], $dashboard_url)); ?>" 
-                   class="<?php echo $tab === $key ? 'active' : ''; ?>">
+                   class="<?php echo esc_attr($tab === $key ? 'active' : ''); ?>">
                     <?php echo esc_html($label); ?>
                 </a>
             <?php endforeach; ?>

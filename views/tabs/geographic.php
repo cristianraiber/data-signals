@@ -77,7 +77,7 @@ $total_visitors = max(1, $totals->visitors);
                         <?php echo esc_html(substr($country->country_name ?: $country->country_code, 0, 12)); ?>
                     </span>
                     <div class="ds-bar-track">
-                        <div class="ds-bar-fill" style="width: <?php echo $pct; ?>%"></div>
+                        <div class="ds-bar-fill" style="width: <?php echo esc_attr($pct); ?>%"></div>
                     </div>
                     <span class="ds-bar-value"><?php echo number_format_i18n($country->visitors); ?></span>
                 </div>
