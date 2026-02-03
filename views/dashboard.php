@@ -666,6 +666,7 @@ function ds_flag($code) {
                         'countries' => __('Countries', 'data-signals'),
                         'campaigns' => __('Campaigns', 'data-signals'),
                         'clicks' => __('Clicks', 'data-signals'),
+                        'events' => __('Events', 'data-signals'),
                     ];
                     foreach ($export_types as $type => $label):
                         $export_url = wp_nonce_url(add_query_arg([
@@ -718,6 +719,9 @@ function ds_flag($code) {
                 break;
             case 'clicks':
                 include DS_DIR . '/views/tabs/clicks.php';
+                break;
+            case 'events':
+                include DS_DIR . '/views/tabs/events.php';
                 break;
             default:
                 include DS_DIR . '/views/tabs/overview.php';

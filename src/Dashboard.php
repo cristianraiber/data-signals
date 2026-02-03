@@ -20,7 +20,7 @@ class Dashboard {
         
         // Determine current tab
         $tab = $_GET['tab'] ?? 'overview';
-        $valid_tabs = ['overview', 'devices', 'geographic', 'campaigns', 'referrers', 'clicks'];
+        $valid_tabs = ['overview', 'devices', 'geographic', 'campaigns', 'referrers', 'clicks', 'events'];
         if (!in_array($tab, $valid_tabs)) {
             $tab = 'overview';
         }
@@ -94,6 +94,10 @@ class Dashboard {
                 $view_data['download_clicks'] = $this->stats->get_clicks($start_str, $end_str, 'download', 10);
                 $view_data['top_domains'] = $this->stats->get_top_domains($start_str, $end_str, 10);
                 break;
+            
+            case 'events':
+                // Events tab uses Event_Tracker directly in the view
+                break;
                 
             case 'overview':
             default:
@@ -121,6 +125,7 @@ class Dashboard {
             'campaigns'  => __('Campaigns', 'data-signals'),
             'referrers'  => __('Referrers', 'data-signals'),
             'clicks'     => __('Clicks', 'data-signals'),
+            'events'     => __('Events', 'data-signals'),
         ];
     }
     

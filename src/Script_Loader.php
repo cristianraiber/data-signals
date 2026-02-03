@@ -35,10 +35,18 @@ class Script_Loader {
     public function print_tracking_data(): void {
         global $post;
         
+        // Generate visitor/session IDs for this request
+        $fingerprinter = new Fingerprinter();
+        $visitor_id = $fingerprinter->get_visitor_id();
+        $session_id = $fingerprinter->get_session_id();
+        
         $data = [
             'url' => $this->get_collect_url(),
+            'restUrl' => rest_url('data-signals/v1'),
             'path' => $this->get_current_path(),
             'id' => $post->ID ?? 0,
+            'visitor_id' => $visitor_id,
+            'session_id' => $session_id,
         ];
         
         printf(

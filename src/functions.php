@@ -148,3 +148,101 @@ function is_request_excluded(): bool {
     // Allow filtering
     return apply_filters('ds_is_request_excluded', false);
 }
+
+// =============================================================================
+// Public Event Tracking API (for 3rd party plugins)
+// =============================================================================
+
+/**
+ * Register a custom event type
+ * 
+ * Call this during 'data_signals_register_events' action or 'init'.
+ * 
+ * @param string $event_name Unique event identifier (snake_case recommended)
+ * @param array $args {
+ *     @type string $label       Human-readable label
+ *     @type string $category    Event category: engagement, ecommerce, form, video, download, social, custom
+ *     @type string $plugin      Plugin slug that registers this event
+ *     @type string $description Optional description
+ *     @type array  $schema      Expected properties and their types
+ * }
+ * @return bool Success
+ * 
+ * @example
+ * // In your plugin's init:
+ * add_action('data_signals_register_events', function() {
+ *     ds_register_event('form_submitted', [
+ *         'label' => 'Form Submitted',
+ *         'category' => 'form',
+ *         'plugin' => 'my-forms-plugin',
+ *         'schema' => [
+ *             'form_id' => 'integer',
+ *             'form_name' => 'string',
+ *         ]
+ *     ]);
+ * });
+ */
+function ds_register_event(string $event_name, array $args = []): bool {
+    if (!class_exists('\DataSignals\Event_Tracker')) {
+        return false;
+    }
+    return Event_Tracker::register_event($event_name, $args);
+}
+
+/**
+ * Track a custom event (server-side)
+ * 
+ * @param string $event_name Event identifier (must be registered or will use 'custom' category)
+ * @param array $data Event properties (key-value pairs)
+ * @param array $context Optional context: visitor_id, session_id, page_url, etc.
+ * @return bool Success
+ * 
+ * @example
+ * // Track a form submission
+ * ds_track_event('form_submitted', [
+ *     'form_id' => 123,
+ *     'form_name' => 'Contact Form',
+ *     'fields_count' => 5
+ * ]);
+ * 
+ * // Track with context
+ * ds_track_event('purchase_completed', [
+ *     'order_id' => 456,
+ *     'total' => 99.99
+ * ], [
+ *     'page_url' => get_permalink(),
+ *     'visitor_id' => $_COOKIE['ds_visitor'] ?? ''
+ * ]);
+ */
+function ds_track_event(string $event_name, array $data = [], array $context = []): bool {
+    if (!class_exists('\DataSignals\Event_Tracker')) {
+        return false;
+    }
+    return Event_Tracker::track($event_name, $data, $context);
+}
+
+/**
+ * Check if an event type is registered
+ * 
+ * @param string $event_name Event identifier
+ * @return bool
+ */
+function ds_is_event_registered(string $event_name): bool {
+    if (!class_exists('\DataSignals\Event_Tracker')) {
+        return false;
+    }
+    return Event_Tracker::is_registered($event_name);
+}
+
+/**
+ * Get all registered events
+ * 
+ * @param string|null $category Filter by category (optional)
+ * @return array
+ */
+function ds_get_registered_events(?string $category = null): array {
+    if (!class_exists('\DataSignals\Event_Tracker')) {
+        return [];
+    }
+    return Event_Tracker::get_registered_events($category);
+}

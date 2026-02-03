@@ -126,6 +126,48 @@ class Rest {
             'callback' => [$this, 'download_geolite2'],
             'permission_callback' => [$this, 'check_admin_permission'],
         ]);
+        
+        // Custom Events endpoints
+        register_rest_route($namespace, '/event', [
+            'methods' => 'POST',
+            'callback' => [$this, 'track_event'],
+            'permission_callback' => '__return_true', // Public for JS tracking
+            'args' => [
+                'event' => ['required' => true, 'sanitize_callback' => 'sanitize_key'],
+                'data' => ['default' => []],
+                'visitor_id' => ['sanitize_callback' => 'sanitize_key'],
+                'session_id' => ['sanitize_callback' => 'sanitize_key'],
+                'url' => ['sanitize_callback' => 'esc_url_raw'],
+                'title' => ['sanitize_callback' => 'sanitize_text_field'],
+                'referrer' => ['sanitize_callback' => 'esc_url_raw'],
+            ],
+        ]);
+        
+        register_rest_route($namespace, '/events', [
+            'methods' => 'GET',
+            'callback' => [$this, 'get_events'],
+            'permission_callback' => [$this, 'check_permission'],
+            'args' => [
+                'start_date' => ['validate_callback' => [$this, 'validate_date']],
+                'end_date' => ['validate_callback' => [$this, 'validate_date']],
+                'limit' => ['default' => 20, 'sanitize_callback' => 'absint'],
+            ],
+        ]);
+        
+        register_rest_route($namespace, '/events/registered', [
+            'methods' => 'GET',
+            'callback' => [$this, 'get_registered_events'],
+            'permission_callback' => [$this, 'check_permission'],
+        ]);
+        
+        register_rest_route($namespace, '/events/recent', [
+            'methods' => 'GET',
+            'callback' => [$this, 'get_recent_events'],
+            'permission_callback' => [$this, 'check_permission'],
+            'args' => [
+                'limit' => ['default' => 50, 'sanitize_callback' => 'absint'],
+            ],
+        ]);
     }
     
     public function check_permission(): bool {
@@ -304,6 +346,51 @@ class Rest {
         $status_code = $result['success'] ? 200 : 400;
         
         return new WP_REST_Response($result, $status_code);
+    }
+    
+    // =========================================================================
+    // Custom Events Endpoints
+    // =========================================================================
+    
+    public function track_event(WP_REST_Request $request): WP_REST_Response {
+        $result = Event_Tracker::track_from_request($request);
+        $status = $result['success'] ? 200 : 400;
+        return new WP_REST_Response($result, $status);
+    }
+    
+    public function get_events(WP_REST_Request $request): WP_REST_Response {
+        $tz = get_site_timezone();
+        $now = new DateTimeImmutable('now', $tz);
+        
+        $start = $request->get_param('start_date')
+            ? new DateTimeImmutable($request->get_param('start_date'), $tz)
+            : $now->modify('-28 days');
+        $end = $request->get_param('end_date')
+            ? new DateTimeImmutable($request->get_param('end_date'), $tz)
+            : $now;
+        
+        $limit = min($request->get_param('limit'), 100);
+        
+        $stats = Event_Tracker::get_stats($start, $end, $limit);
+        
+        return new WP_REST_Response($stats);
+    }
+    
+    public function get_registered_events(WP_REST_Request $request): WP_REST_Response {
+        $events = Event_Tracker::get_registered_events();
+        $categories = Event_Tracker::get_categories();
+        
+        return new WP_REST_Response([
+            'events' => $events,
+            'categories' => $categories,
+        ]);
+    }
+    
+    public function get_recent_events(WP_REST_Request $request): WP_REST_Response {
+        $limit = min($request->get_param('limit'), 100);
+        $events = Event_Tracker::get_recent($limit);
+        
+        return new WP_REST_Response(['events' => $events]);
     }
     
     private function check_buffer_status(): array {

@@ -84,6 +84,30 @@ class Exporter {
                 }
                 break;
                 
+            case 'events':
+                $headers = ['Date', 'Event', 'Category', 'Page URL', 'Properties', 'Country', 'Device'];
+                global $wpdb;
+                $rows = $wpdb->get_results($wpdb->prepare(
+                    "SELECT event_name, event_category, event_data, page_url, country_code, device_type, created_at
+                     FROM {$wpdb->prefix}ds_events
+                     WHERE created_at >= %s AND created_at <= %s
+                     ORDER BY created_at DESC
+                     LIMIT 5000",
+                    $start . ' 00:00:00', $end . ' 23:59:59'
+                ));
+                foreach ($rows as $row) {
+                    $data[] = [
+                        $row->created_at,
+                        $row->event_name,
+                        $row->event_category,
+                        $row->page_url,
+                        $row->event_data,
+                        $row->country_code,
+                        $row->device_type
+                    ];
+                }
+                break;
+                
             default:
                 wp_die(__('Invalid export type.', 'data-signals'));
         }
