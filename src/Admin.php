@@ -292,42 +292,39 @@ class Admin {
             <form method="post" action="">
                 <?php wp_nonce_field('ds_gdpr_save', 'ds_gdpr_nonce'); ?>
                 
-                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 24px; border-radius: 8px; margin: 20px 0 30px;">
-                    <h2 style="color: #fff; margin-top: 0; display: flex; align-items: center; gap: 10px; font-size: 18px;">
-                        🛡️ <?php esc_html_e('GDPR Compliance', 'data-signals'); ?>
+                <div class="card" style="max-width: 100%; margin: 20px 0 30px; padding: 20px;">
+                    <h2 style="margin-top: 0; display: flex; align-items: center; gap: 10px; font-size: 16px;">
+                        <?php esc_html_e('GDPR Compliance', 'data-signals'); ?>
                         <?php if ($is_eu): ?>
-                            <span style="background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: normal;">
-                                <?php printf(esc_html__('Auto-detected: %s (EU)', 'data-signals'), $detected_country); ?>
+                            <span class="description" style="font-size: 12px; font-weight: normal;">
+                                <?php printf(esc_html__('Auto-detected: %s (EU)', 'data-signals'), esc_html($detected_country)); ?>
                             </span>
                         <?php else: ?>
-                            <span style="background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: normal;">
-                                <?php printf(esc_html__('Detected: %s', 'data-signals'), $detected_country); ?>
+                            <span class="description" style="font-size: 12px; font-weight: normal;">
+                                <?php printf(esc_html__('Detected: %s', 'data-signals'), esc_html($detected_country)); ?>
                             </span>
                         <?php endif; ?>
                     </h2>
-                    <p style="opacity: 0.9; margin-bottom: 20px; font-size: 14px;">
+                    <p class="description" style="margin-bottom: 16px;">
                         <?php esc_html_e('Enable GDPR mode for privacy-compliant analytics. Recommended for EU/EEA sites.', 'data-signals'); ?>
                     </p>
                     
-                    <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; background: rgba(255,255,255,0.15); padding: 16px; border-radius: 6px;">
-                        <input type="checkbox" name="gdpr_mode" value="1" <?php checked($gdpr_enabled); ?> 
-                               style="width: 20px; height: 20px; accent-color: #4ade80;">
-                        <span style="font-size: 15px; font-weight: 500;">
+                    <p>
+                        <label>
+                            <input type="checkbox" name="gdpr_mode" value="1" <?php checked($gdpr_enabled); ?>>
                             <?php esc_html_e('Enable GDPR Mode', 'data-signals'); ?>
-                        </span>
-                        <button type="submit" class="button" style="margin-left: auto; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: #fff;">
-                            <?php esc_html_e('Save', 'data-signals'); ?>
-                        </button>
-                    </label>
+                        </label>
+                        <?php submit_button(__('Save', 'data-signals'), 'secondary', 'submit', false, ['style' => 'margin-left: 12px;']); ?>
+                    </p>
                     
-                    <div style="margin-top: 16px; padding: 16px; background: rgba(0,0,0,0.15); border-radius: 6px; font-size: 13px;">
+                    <div style="margin-top: 16px; padding: 12px; background: #f0f0f1; border-left: 4px solid #2271b1;">
                         <strong><?php esc_html_e('When enabled:', 'data-signals'); ?></strong>
-                        <ul style="margin: 10px 0 0 20px; opacity: 0.9; line-height: 1.8;">
-                            <li>✓ <?php esc_html_e('IP addresses are anonymized before processing', 'data-signals'); ?></li>
-                            <li>✓ <?php esc_html_e('Do Not Track (DNT) browser header is respected', 'data-signals'); ?></li>
-                            <li>✓ <?php esc_html_e('No cookies are used (fingerprint-based sessions)', 'data-signals'); ?></li>
-                            <li>✓ <?php esc_html_e('Session data rotates daily for privacy', 'data-signals'); ?></li>
-                            <li>✓ <?php esc_html_e('No personal identifiable information is stored', 'data-signals'); ?></li>
+                        <ul style="margin: 8px 0 0 20px; line-height: 1.6;">
+                            <li><?php esc_html_e('IP addresses are anonymized before processing', 'data-signals'); ?></li>
+                            <li><?php esc_html_e('Do Not Track (DNT) browser header is respected', 'data-signals'); ?></li>
+                            <li><?php esc_html_e('No cookies are used (fingerprint-based sessions)', 'data-signals'); ?></li>
+                            <li><?php esc_html_e('Session data rotates daily for privacy', 'data-signals'); ?></li>
+                            <li><?php esc_html_e('No personal identifiable information is stored', 'data-signals'); ?></li>
                         </ul>
                     </div>
                 </div>
