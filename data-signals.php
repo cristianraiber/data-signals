@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('DS_VERSION', '2.4.0');
+define('DS_VERSION', '2.4.1');
 define('DS_FILE', __FILE__);
 define('DS_DIR', __DIR__);
 
@@ -35,6 +35,9 @@ add_action('init', function() {
 
 // Initialize Event Tracker
 Event_Tracker::init();
+
+// Initialize Revenue Tracker
+Revenue_Tracker::init();
 
 // Cron hooks
 add_filter('cron_schedules', function($schedules) {

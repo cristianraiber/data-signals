@@ -4,6 +4,7 @@
  */
 
 use DataSignals\Event_Tracker;
+use DataSignals\Revenue_Tracker;
 
 defined('ABSPATH') or exit;
 
@@ -35,6 +36,11 @@ for ($i = 0; $i <= $interval->days; $i++) {
 }
 
 $max_events = !empty($top_events) ? max(array_column($top_events, 'total_count')) : 1;
+
+// Get revenue stats
+$revenue_stats = Revenue_Tracker::get_stats($start_str, $end_str);
+$has_revenue = !empty($revenue_stats['by_currency']);
+$top_products = $has_revenue ? Revenue_Tracker::get_top_products($start_str, $end_str, 10) : [];
 ?>
 
 <!-- Stats Cards -->
@@ -56,6 +62,66 @@ $max_events = !empty($top_events) ? max(array_column($top_events, 'total_count')
         <div class="value"><?php echo count($registered_events); ?></div>
     </div>
 </div>
+
+<?php if ($has_revenue): ?>
+<!-- Revenue Section -->
+<div class="ds-card" style="margin-bottom: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="ds-card-header" style="border-bottom-color: rgba(255,255,255,0.2);">
+        <h3 style="color: #fff;">💰 <?php esc_html_e('Revenue Overview', 'data-signals'); ?></h3>
+    </div>
+    <div class="ds-card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+            <?php foreach ($revenue_stats['by_currency'] as $curr): ?>
+                <div style="background: rgba(255,255,255,0.15); padding: 16px; border-radius: 8px;">
+                    <div style="font-size: 11px; color: rgba(255,255,255,0.8); text-transform: uppercase; margin-bottom: 4px;">
+                        <?php echo esc_html($curr->currency); ?> Revenue
+                    </div>
+                    <div style="font-size: 28px; font-weight: 700; color: #fff;">
+                        <?php echo esc_html(Revenue_Tracker::format_amount($curr->total_revenue, $curr->currency)); ?>
+                    </div>
+                    <div style="font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 4px;">
+                        <?php echo number_format_i18n($curr->total_transactions); ?> <?php esc_html_e('transactions', 'data-signals'); ?>
+                        • <?php esc_html_e('Avg:', 'data-signals'); ?> <?php echo esc_html(Revenue_Tracker::format_amount($curr->avg_order_value, $curr->currency)); ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</div>
+
+<?php if (!empty($top_products)): ?>
+<div class="ds-card" style="margin-bottom: 20px;">
+    <div class="ds-card-header">
+        <h3>🏆 <?php esc_html_e('Top Products by Revenue', 'data-signals'); ?></h3>
+    </div>
+    <table class="ds-table">
+        <thead>
+            <tr>
+                <th><?php esc_html_e('Product', 'data-signals'); ?></th>
+                <th class="num"><?php esc_html_e('Qty', 'data-signals'); ?></th>
+                <th class="num"><?php esc_html_e('Revenue', 'data-signals'); ?></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($top_products as $product): ?>
+                <tr>
+                    <td>
+                        <strong><?php echo esc_html($product->product_name ?: $product->product_id); ?></strong>
+                        <?php if ($product->product_name && $product->product_name !== $product->product_id): ?>
+                            <br><small style="color: var(--ds-text-muted);"><?php echo esc_html($product->product_id); ?></small>
+                        <?php endif; ?>
+                    </td>
+                    <td class="num"><?php echo number_format_i18n($product->total_quantity); ?></td>
+                    <td class="num">
+                        <strong><?php echo esc_html(Revenue_Tracker::format_amount($product->total_revenue, $product->currency)); ?></strong>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>
+<?php endif; ?>
+<?php endif; ?>
 
 <!-- Chart -->
 <div class="ds-card">

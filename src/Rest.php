@@ -168,6 +168,30 @@ class Rest {
                 'limit' => ['default' => 50, 'sanitize_callback' => 'absint'],
             ],
         ]);
+        
+        // Revenue endpoints
+        register_rest_route($namespace, '/revenue', [
+            'methods' => 'GET',
+            'callback' => [$this, 'get_revenue'],
+            'permission_callback' => [$this, 'check_permission'],
+            'args' => [
+                'start_date' => ['validate_callback' => [$this, 'validate_date']],
+                'end_date' => ['validate_callback' => [$this, 'validate_date']],
+                'currency' => ['sanitize_callback' => 'sanitize_text_field'],
+            ],
+        ]);
+        
+        register_rest_route($namespace, '/revenue/products', [
+            'methods' => 'GET',
+            'callback' => [$this, 'get_revenue_products'],
+            'permission_callback' => [$this, 'check_permission'],
+            'args' => [
+                'start_date' => ['validate_callback' => [$this, 'validate_date']],
+                'end_date' => ['validate_callback' => [$this, 'validate_date']],
+                'currency' => ['sanitize_callback' => 'sanitize_text_field'],
+                'limit' => ['default' => 10, 'sanitize_callback' => 'absint'],
+            ],
+        ]);
     }
     
     public function check_permission(): bool {
@@ -391,6 +415,40 @@ class Rest {
         $events = Event_Tracker::get_recent($limit);
         
         return new WP_REST_Response(['events' => $events]);
+    }
+    
+    // =========================================================================
+    // Revenue Endpoints
+    // =========================================================================
+    
+    public function get_revenue(WP_REST_Request $request): WP_REST_Response {
+        [$start, $end] = $this->get_date_params($request);
+        $currency = $request->get_param('currency') ?: null;
+        
+        $stats = Revenue_Tracker::get_stats($start, $end, $currency);
+        
+        // Get comparison with previous period
+        $days = (strtotime($end) - strtotime($start)) / 86400;
+        $prev_end = date('Y-m-d', strtotime($start) - 86400);
+        $prev_start = date('Y-m-d', strtotime($prev_end) - $days * 86400);
+        
+        $comparison = Revenue_Tracker::get_comparison($start, $end, $prev_start, $prev_end);
+        
+        return new WP_REST_Response([
+            'stats' => $stats,
+            'comparison' => $comparison,
+            'period' => ['start' => $start, 'end' => $end],
+        ]);
+    }
+    
+    public function get_revenue_products(WP_REST_Request $request): WP_REST_Response {
+        [$start, $end] = $this->get_date_params($request);
+        $currency = $request->get_param('currency') ?: null;
+        $limit = min($request->get_param('limit'), 50);
+        
+        $products = Revenue_Tracker::get_top_products($start, $end, $limit, $currency);
+        
+        return new WP_REST_Response(['products' => $products]);
     }
     
     private function check_buffer_status(): array {
