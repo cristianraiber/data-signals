@@ -145,8 +145,27 @@ function is_request_excluded(): bool {
         return true;
     }
     
+    // GDPR: Honor Do Not Track header
+    if (is_gdpr_enabled() && is_dnt_enabled()) {
+        return true;
+    }
+    
     // Allow filtering
     return apply_filters('ds_is_request_excluded', false);
+}
+
+/**
+ * Check if GDPR mode is enabled
+ */
+function is_gdpr_enabled(): bool {
+    return \DataSignals\Admin::is_gdpr_enabled();
+}
+
+/**
+ * Check if Do Not Track header is set
+ */
+function is_dnt_enabled(): bool {
+    return isset($_SERVER['HTTP_DNT']) && $_SERVER['HTTP_DNT'] === '1';
 }
 
 // =============================================================================

@@ -76,17 +76,88 @@ class Fingerprinter {
     }
     
     /**
+     * Get visitor ID (public interface)
+     */
+    public function get_visitor_id(): string {
+        return self::generate_visitor_id();
+    }
+    
+    /**
+     * Get session ID (public interface)
+     */
+    public function get_session_id(): string {
+        return self::generate_session_id();
+    }
+    
+    /**
      * Generate a privacy-friendly visitor ID based on:
      * - Daily rotating seed
-     * - User agent
-     * - IP address
+     * - User agent (unless GDPR no_ua enabled)
+     * - IP address (anonymized if GDPR enabled)
      */
-    private static function get_visitor_id(): string {
+    private static function generate_visitor_id(): string {
         $seed = self::get_seed();
-        $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
-        $ip = get_client_ip();
+        $user_agent = self::get_user_agent_for_fingerprint();
+        $ip = self::get_ip_for_fingerprint();
         
         return hash('xxh64', "{$seed}-{$user_agent}-{$ip}");
+    }
+    
+    /**
+     * Generate a session ID
+     */
+    private static function generate_session_id(): string {
+        $visitor_id = self::generate_visitor_id();
+        $hour = date('YmdH');
+        return hash('xxh64', "{$visitor_id}-{$hour}");
+    }
+    
+    /**
+     * Get user agent for fingerprinting (respects GDPR settings)
+     */
+    private static function get_user_agent_for_fingerprint(): string {
+        $settings = get_option('data_signals_settings', []);
+        
+        // If GDPR mode and no_ua is enabled, return generic UA
+        if (Admin::is_gdpr_enabled() && !empty($settings['gdpr_no_ua'])) {
+            return 'anonymous';
+        }
+        
+        return $_SERVER['HTTP_USER_AGENT'] ?? '';
+    }
+    
+    /**
+     * Get IP for fingerprinting (respects GDPR anonymization)
+     */
+    private static function get_ip_for_fingerprint(): string {
+        $ip = get_client_ip();
+        
+        // If GDPR mode, anonymize IP by zeroing last octet(s)
+        if (Admin::is_gdpr_enabled()) {
+            $ip = self::anonymize_ip($ip);
+        }
+        
+        return $ip;
+    }
+    
+    /**
+     * Anonymize IP address (zero last octet for IPv4, last 80 bits for IPv6)
+     */
+    public static function anonymize_ip(string $ip): string {
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            // IPv4: zero last octet (e.g., 192.168.1.100 -> 192.168.1.0)
+            return preg_replace('/\.\d+$/', '.0', $ip);
+        }
+        
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            // IPv6: zero last 80 bits (5 groups)
+            $parts = explode(':', $ip);
+            if (count($parts) >= 8) {
+                return implode(':', array_slice($parts, 0, 3)) . ':0:0:0:0:0';
+            }
+        }
+        
+        return $ip;
     }
     
     /**
