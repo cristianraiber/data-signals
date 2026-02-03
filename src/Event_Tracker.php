@@ -287,10 +287,12 @@ class Event_Tracker {
         
         // Get geo/device if available
         if (class_exists('\DataSignals\Geo_Locator')) {
-            $context['country_code'] = Geo_Locator::get_country_code();
+            $geo = Geo_Locator::get_country();
+            $context['country_code'] = $geo['country_code'] ?? null;
         }
         if (class_exists('\DataSignals\Device_Detector')) {
-            $device = Device_Detector::detect();
+            $detector = new Device_Detector($context['user_agent'] ?? '');
+            $device = $detector->detect();
             $context['device_type'] = $device['device_type'] ?? null;
         }
         

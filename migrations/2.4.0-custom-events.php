@@ -32,7 +32,7 @@ $wpdb->query("CREATE TABLE IF NOT EXISTS {$wpdb->prefix}ds_events (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     event_name VARCHAR(100) NOT NULL,
     event_category VARCHAR(50) NOT NULL DEFAULT 'custom',
-    event_data JSON DEFAULT NULL,
+    event_data TEXT DEFAULT NULL,
     visitor_id VARCHAR(32) DEFAULT NULL,
     session_id VARCHAR(32) DEFAULT NULL,
     page_url VARCHAR(500) DEFAULT NULL,
