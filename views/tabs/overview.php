@@ -11,50 +11,57 @@ $visitors_change = $prev_totals->visitors > 0
 $pageviews_change = $prev_totals->pageviews > 0 
     ? round((($totals->pageviews - $prev_totals->pageviews) / $prev_totals->pageviews) * 100, 1) 
     : 0;
+
+$pages_per_visit = $totals->visitors > 0 ? $totals->pageviews / $totals->visitors : 0;
 ?>
 
+<!-- Stats Cards -->
 <div class="ds-stats-grid">
     <div class="ds-stat-card">
-        <h3><?php esc_html_e('Visitors', 'data-signals'); ?></h3>
+        <h3><?php esc_html_e('Total Visitors', 'data-signals'); ?></h3>
         <div class="value"><?php echo number_format_i18n($totals->visitors); ?></div>
         <?php if ($visitors_change != 0): ?>
             <div class="change <?php echo $visitors_change > 0 ? 'positive' : 'negative'; ?>">
-                <?php echo ($visitors_change > 0 ? '↑ +' : '↓ ') . $visitors_change; ?>% vs previous period
+                <?php echo ($visitors_change > 0 ? '↑' : '↓'); ?> 
+                <?php echo abs($visitors_change); ?>%
             </div>
         <?php endif; ?>
     </div>
     
     <div class="ds-stat-card">
-        <h3><?php esc_html_e('Pageviews', 'data-signals'); ?></h3>
+        <h3><?php esc_html_e('Total Pageviews', 'data-signals'); ?></h3>
         <div class="value"><?php echo number_format_i18n($totals->pageviews); ?></div>
         <?php if ($pageviews_change != 0): ?>
             <div class="change <?php echo $pageviews_change > 0 ? 'positive' : 'negative'; ?>">
-                <?php echo ($pageviews_change > 0 ? '↑ +' : '↓ ') . $pageviews_change; ?>% vs previous period
+                <?php echo ($pageviews_change > 0 ? '↑' : '↓'); ?> 
+                <?php echo abs($pageviews_change); ?>%
             </div>
         <?php endif; ?>
     </div>
     
     <div class="ds-stat-card">
         <h3><?php esc_html_e('Pages per Visit', 'data-signals'); ?></h3>
-        <div class="value">
-            <?php echo $totals->visitors > 0 ? number_format_i18n($totals->pageviews / $totals->visitors, 2) : '0'; ?>
-        </div>
+        <div class="value"><?php echo number_format_i18n($pages_per_visit, 1); ?></div>
+        <div class="sub"><?php esc_html_e('avg. pages viewed', 'data-signals'); ?></div>
     </div>
 </div>
 
+<!-- Traffic Chart -->
 <div class="ds-card">
     <div class="ds-card-header">
-        <h3><?php esc_html_e('Traffic Overview', 'data-signals'); ?></h3>
+        <h3>📈 <?php esc_html_e('Traffic Overview', 'data-signals'); ?></h3>
     </div>
     <div class="ds-card-body ds-chart">
-        <canvas id="ds-chart" height="280"></canvas>
+        <canvas id="ds-chart" height="300"></canvas>
     </div>
 </div>
 
+<!-- Tables -->
 <div class="ds-tables">
+    <!-- Top Pages -->
     <div class="ds-card">
         <div class="ds-card-header">
-            <h3><?php esc_html_e('Top Pages', 'data-signals'); ?></h3>
+            <h3>📄 <?php esc_html_e('Top Pages', 'data-signals'); ?></h3>
         </div>
         <table class="ds-table">
             <thead>
@@ -66,12 +73,12 @@ $pageviews_change = $prev_totals->pageviews > 0
             </thead>
             <tbody>
                 <?php if (empty($pages)): ?>
-                    <tr><td colspan="3" class="ds-empty"><?php esc_html_e('No data yet.', 'data-signals'); ?></td></tr>
+                    <tr><td colspan="3" class="ds-empty"><?php esc_html_e('No data yet. Start tracking to see your top pages.', 'data-signals'); ?></td></tr>
                 <?php else: ?>
                     <?php foreach ($pages as $page): ?>
                         <tr>
                             <td class="url" title="<?php echo esc_attr($page->path); ?>">
-                                <a href="<?php echo esc_url($page->url); ?>" target="_blank">
+                                <a href="<?php echo esc_url($page->url); ?>" target="_blank" rel="noopener">
                                     <?php echo esc_html($page->title ?: $page->path); ?>
                                 </a>
                             </td>
@@ -84,9 +91,10 @@ $pageviews_change = $prev_totals->pageviews > 0
         </table>
     </div>
     
+    <!-- Top Referrers -->
     <div class="ds-card">
         <div class="ds-card-header">
-            <h3><?php esc_html_e('Top Referrers', 'data-signals'); ?></h3>
+            <h3>🔗 <?php esc_html_e('Top Referrers', 'data-signals'); ?></h3>
         </div>
         <table class="ds-table">
             <thead>
@@ -124,21 +132,26 @@ $pageviews_change = $prev_totals->pageviews > 0
     new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: data.map(function(d) { return d.date; }),
+            labels: data.map(function(d) {
+                var date = new Date(d.date);
+                return date.toLocaleDateString('<?php echo get_locale(); ?>', { month: 'short', day: 'numeric' });
+            }),
             datasets: [
                 {
-                    label: '<?php esc_html_e('Visitors', 'data-signals'); ?>',
+                    label: '<?php echo esc_js(__('Visitors', 'data-signals')); ?>',
                     data: data.map(function(d) { return d.visitors; }),
-                    backgroundColor: 'rgba(56, 88, 233, 0.85)',
-                    borderRadius: 3,
-                    yAxisID: 'y'
+                    backgroundColor: 'rgba(79, 70, 229, 0.85)',
+                    borderRadius: 4,
+                    yAxisID: 'y',
+                    barPercentage: 0.7,
                 },
                 {
-                    label: '<?php esc_html_e('Pageviews', 'data-signals'); ?>',
+                    label: '<?php echo esc_js(__('Pageviews', 'data-signals')); ?>',
                     data: data.map(function(d) { return d.pageviews; }),
-                    backgroundColor: 'rgba(0, 163, 42, 0.65)',
-                    borderRadius: 3,
-                    yAxisID: 'y1'
+                    backgroundColor: 'rgba(6, 182, 212, 0.7)',
+                    borderRadius: 4,
+                    yAxisID: 'y1',
+                    barPercentage: 0.7,
                 }
             ]
         },
@@ -146,13 +159,44 @@ $pageviews_change = $prev_totals->pageviews > 0
             responsive: true,
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
-            scales: {
-                x: { grid: { display: false } },
-                y: { type: 'linear', position: 'left', beginAtZero: true, grid: { color: '#e2e4e7' } },
-                y1: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false } }
-            },
             plugins: {
-                legend: { position: 'top', labels: { usePointStyle: true, padding: 20 } }
+                legend: {
+                    position: 'top',
+                    align: 'end',
+                    labels: {
+                        usePointStyle: true,
+                        pointStyle: 'rectRounded',
+                        padding: 20,
+                        font: { size: 12, weight: 500 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#111827',
+                    titleFont: { size: 13, weight: 600 },
+                    bodyFont: { size: 12 },
+                    padding: 12,
+                    cornerRadius: 8,
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { size: 11 }, color: '#6B7280' }
+                },
+                y: {
+                    type: 'linear',
+                    position: 'left',
+                    beginAtZero: true,
+                    grid: { color: '#E5E7EB', drawBorder: false },
+                    ticks: { font: { size: 11 }, color: '#6B7280' }
+                },
+                y1: {
+                    type: 'linear',
+                    position: 'right',
+                    beginAtZero: true,
+                    grid: { drawOnChartArea: false },
+                    ticks: { font: { size: 11 }, color: '#6B7280' }
+                }
             }
         }
     });
