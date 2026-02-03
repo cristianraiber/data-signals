@@ -112,6 +112,13 @@ class Rest {
                 'permission_callback' => [$this, 'check_admin_permission'],
             ],
         ]);
+        
+        // Diagnostics endpoint
+        register_rest_route($namespace, '/diagnostics', [
+            'methods' => 'GET',
+            'callback' => [$this, 'get_diagnostics'],
+            'permission_callback' => [$this, 'check_admin_permission'],
+        ]);
     }
     
     public function check_permission(): bool {
@@ -243,10 +250,16 @@ class Rest {
         $allowed = [
             'is_dashboard_public',
             'exclude_user_roles',
+            'exclude_administrators',
+            'exclude_editors',
             'prune_data_after_months',
             'default_view',
             'use_cookie',
             'cookie_notice_script',
+            // Geo settings
+            'geo_use_cloudflare',
+            'geo_api_fallback',
+            'geolite2_db_path',
         ];
         
         foreach ($allowed as $key) {
@@ -258,5 +271,51 @@ class Rest {
         update_option('data_signals_settings', $settings);
         
         return new WP_REST_Response(['success' => true, 'settings' => $settings]);
+    }
+    
+    public function get_diagnostics(WP_REST_Request $request): WP_REST_Response {
+        $settings = get_settings();
+        
+        return new WP_REST_Response([
+            'cloudflare' => Geo_Locator::check_cloudflare_status(),
+            'geolite2' => Geo_Locator::check_geolite2_status(),
+            'buffer' => $this->check_buffer_status(),
+            'settings' => [
+                'geo_use_cloudflare' => $settings['geo_use_cloudflare'] ?? false,
+                'geo_api_fallback' => $settings['geo_api_fallback'] ?? false,
+                'geolite2_db_path' => $settings['geolite2_db_path'] ?? '',
+            ],
+        ]);
+    }
+    
+    private function check_buffer_status(): array {
+        $buffer_file = get_buffer_filename();
+        $dir = dirname($buffer_file);
+        
+        if (!is_dir($dir)) {
+            return [
+                'status' => 'no_dir',
+                'message' => __('Buffer directory does not exist.', 'data-signals'),
+                'ok' => false,
+            ];
+        }
+        
+        if (!is_writable($dir)) {
+            return [
+                'status' => 'not_writable',
+                'message' => __('Buffer directory is not writable.', 'data-signals'),
+                'ok' => false,
+            ];
+        }
+        
+        $size = file_exists($buffer_file) ? filesize($buffer_file) : 0;
+        
+        return [
+            'status' => 'ok',
+            'message' => sprintf(__('Buffer ready (%s pending)', 'data-signals'), size_format($size)),
+            'ok' => true,
+            'size' => $size,
+            'path' => $buffer_file,
+        ];
     }
 }

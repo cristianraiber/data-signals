@@ -101,6 +101,18 @@ $text-muted: #757575;
 			margin-bottom: 0;
 		}
 
+		.components-text-control {
+			margin-bottom: 20px;
+			padding-bottom: 20px;
+			border-bottom: 1px solid $border-color;
+
+			&:last-child {
+				margin-bottom: 0;
+				padding-bottom: 0;
+				border-bottom: none;
+			}
+		}
+
 		.components-base-control__label {
 			font-size: 13px;
 			font-weight: 500;
@@ -139,7 +151,8 @@ $text-muted: #757575;
 			}
 		}
 
-		.components-select-control__input {
+		.components-select-control__input,
+		.components-text-control__input {
 			border: 1px solid #8c8f94;
 			border-radius: 4px;
 			padding: 8px 12px;
@@ -153,6 +166,10 @@ $text-muted: #757575;
 				box-shadow: 0 0 0 1px $primary-color;
 				outline: none;
 			}
+		}
+
+		.components-text-control__input {
+			max-width: 100%;
 		}
 	}
 
@@ -180,6 +197,75 @@ $text-muted: #757575;
 				background: $primary-color;
 				opacity: 0.7;
 			}
+		}
+	}
+
+	// Diagnostics
+	.ds-diagnostics {
+		.ds-diagnostic-row {
+			display: flex;
+			gap: 20px;
+			padding: 16px 0;
+			border-bottom: 1px solid $border-color;
+
+			&:first-child {
+				padding-top: 0;
+			}
+
+			&:last-child {
+				border-bottom: none;
+				padding-bottom: 0;
+			}
+		}
+
+		.ds-diagnostic-label {
+			width: 140px;
+			flex-shrink: 0;
+
+			strong {
+				font-size: 13px;
+				color: $text-dark;
+			}
+		}
+
+		.ds-diagnostic-value {
+			flex: 1;
+		}
+
+		.ds-diagnostic-message {
+			margin: 8px 0 0;
+			font-size: 13px;
+			color: $text-muted;
+		}
+
+		.ds-diagnostic-path {
+			display: block;
+			margin-top: 8px;
+			padding: 8px 12px;
+			background: $bg-light;
+			border-radius: 4px;
+			font-size: 12px;
+			word-break: break-all;
+		}
+	}
+
+	.ds-status-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		padding: 4px 10px;
+		border-radius: 12px;
+		font-size: 12px;
+		font-weight: 500;
+
+		&.ds-status-ok {
+			background: #d7f7c2;
+			color: #006908;
+		}
+
+		&.ds-status-error {
+			background: #fcebea;
+			color: #cc1818;
 		}
 	}
 
@@ -264,6 +350,15 @@ $text-muted: #757575;
 
 		.ds-settings-card-body .components-select-control__input {
 			max-width: 100%;
+		}
+
+		.ds-diagnostics .ds-diagnostic-row {
+			flex-direction: column;
+			gap: 8px;
+		}
+
+		.ds-diagnostics .ds-diagnostic-label {
+			width: 100%;
 		}
 	}
 }

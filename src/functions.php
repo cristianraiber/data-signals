@@ -96,6 +96,10 @@ function get_settings(): array {
         'prune_data_after_months' => 24,
         'exclude_administrators' => true,
         'exclude_editors' => false,
+        // Geolocation settings
+        'geo_use_cloudflare' => false,
+        'geo_api_fallback' => false,
+        'geolite2_db_path' => '',
     ];
     
     // Try new REST API settings first, fallback to old

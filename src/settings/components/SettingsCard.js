@@ -3,7 +3,7 @@
  */
 
 import { __ } from '@wordpress/i18n';
-import { Button, ToggleControl, SelectControl } from '@wordpress/components';
+import { Button, ToggleControl, SelectControl, TextControl } from '@wordpress/components';
 
 const SettingsCard = ( { title, fields, data, onChange, onSave, saving } ) => {
 	const renderField = ( field ) => {
@@ -39,6 +39,24 @@ const SettingsCard = ( { title, fields, data, onChange, onSave, saving } ) => {
 					onChange={ ( newValue ) =>
 						onChange( { [ field.id ]: newValue } )
 					}
+				/>
+			);
+		}
+
+		// Text input field
+		if ( field.type === 'text' && field.Edit === 'input' ) {
+			return (
+				<TextControl
+					key={ field.id }
+					__nextHasNoMarginBottom
+					__next40pxDefaultSize
+					label={ field.label }
+					help={ field.description }
+					value={ value || '' }
+					onChange={ ( newValue ) =>
+						onChange( { [ field.id ]: newValue } )
+					}
+					placeholder={ field.placeholder || '' }
 				/>
 			);
 		}
