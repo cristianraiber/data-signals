@@ -11,11 +11,17 @@ class Controller {
         // Handle collect requests (fallback when no optimized endpoint)
         $this->maybe_collect();
         
+        // Handle export requests
+        add_action('admin_init', [Exporter::class, 'handle_request']);
+        
         // Load frontend tracking script
         if (!is_admin()) {
             add_action('wp', function() {
                 (new Script_Loader())->enqueue();
             });
+            
+            // Initialize WooCommerce tracking
+            WooCommerce_Tracker::init();
         }
         
         // Admin hooks

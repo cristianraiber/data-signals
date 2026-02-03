@@ -227,10 +227,68 @@ function ds_flag($code) {
 /* Toolbar */
 .ds-toolbar {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
     gap: 12px;
+}
+
+/* Export Dropdown */
+.ds-export-dropdown {
+    position: relative;
+}
+
+.ds-export-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: var(--ds-bg-card);
+    border: 1px solid var(--ds-border-dark);
+    border-radius: var(--ds-radius);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ds-text);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.ds-export-btn:hover {
+    background: var(--ds-bg);
+    border-color: var(--ds-primary);
+}
+
+.ds-export-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    background: var(--ds-bg-card);
+    border: 1px solid var(--ds-border);
+    border-radius: var(--ds-radius);
+    box-shadow: var(--ds-shadow-md);
+    min-width: 160px;
+    z-index: 100;
+    overflow: hidden;
+}
+
+.ds-export-menu.show {
+    display: block;
+}
+
+.ds-export-menu a {
+    display: block;
+    padding: 10px 16px;
+    color: var(--ds-text);
+    text-decoration: none;
+    font-size: 14px;
+    transition: background 0.1s;
+}
+
+.ds-export-menu a:hover {
+    background: var(--ds-bg);
+    color: var(--ds-primary);
 }
 
 .ds-date-picker {
@@ -593,8 +651,36 @@ function ds_flag($code) {
     
     <!-- Content -->
     <div class="ds-content">
-        <!-- Date Picker -->
+        <!-- Toolbar -->
         <div class="ds-toolbar">
+            <div class="ds-export-dropdown">
+                <button type="button" class="ds-export-btn" onclick="this.nextElementSibling.classList.toggle('show')">
+                    📥 <?php esc_html_e('Export CSV', 'data-signals'); ?>
+                    <span style="margin-left: 4px;">▾</span>
+                </button>
+                <div class="ds-export-menu">
+                    <?php
+                    $export_types = [
+                        'overview' => __('Daily Stats', 'data-signals'),
+                        'pages' => __('Pages', 'data-signals'),
+                        'referrers' => __('Referrers', 'data-signals'),
+                        'devices' => __('Devices', 'data-signals'),
+                        'countries' => __('Countries', 'data-signals'),
+                        'campaigns' => __('Campaigns', 'data-signals'),
+                        'clicks' => __('Clicks', 'data-signals'),
+                    ];
+                    foreach ($export_types as $type => $label):
+                        $export_url = wp_nonce_url(add_query_arg([
+                            'ds_export' => $type,
+                            'start_date' => $start_str,
+                            'end_date' => $end_str,
+                        ], admin_url('admin.php')), 'ds_export');
+                    ?>
+                        <a href="<?php echo esc_url($export_url); ?>"><?php echo esc_html($label); ?></a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            
             <form method="get" class="ds-date-picker">
                 <input type="hidden" name="page" value="data-signals">
                 <input type="hidden" name="tab" value="<?php echo esc_attr($tab); ?>">
