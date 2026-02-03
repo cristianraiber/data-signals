@@ -53,7 +53,7 @@ function ds_flag($code) {
 
 /* Header */
 .ds-header {
-    background: var(--ds-primary);
+    background: #1d2327;
     padding: 0;
 }
 
