@@ -313,7 +313,42 @@ class Rest {
     }
     
     public function get_settings(WP_REST_Request $request): WP_REST_Response {
-        return new WP_REST_Response(get_settings());
+        $settings = get_settings();
+        
+        // Add user roles for dynamic toggles
+        $settings['_user_roles'] = $this->get_user_roles();
+        
+        // Add GDPR detection info
+        $settings['_detected_country'] = Admin::detect_site_country();
+        $settings['_is_eu'] = Admin::is_eu_site();
+        
+        return new WP_REST_Response($settings);
+    }
+    
+    /**
+     * Get all registered user roles (excluding subscriber)
+     */
+    private function get_user_roles(): array {
+        global $wp_roles;
+        
+        if (!isset($wp_roles)) {
+            $wp_roles = new \WP_Roles();
+        }
+        
+        $roles = [];
+        foreach ($wp_roles->roles as $role_slug => $role_data) {
+            // Skip subscriber
+            if ($role_slug === 'subscriber') {
+                continue;
+            }
+            
+            $roles[] = [
+                'slug'  => $role_slug,
+                'name'  => translate_user_role($role_data['name']),
+            ];
+        }
+        
+        return $roles;
     }
     
     public function update_settings(WP_REST_Request $request): WP_REST_Response {
@@ -322,9 +357,6 @@ class Rest {
         
         $allowed = [
             'is_dashboard_public',
-            'exclude_user_roles',
-            'exclude_administrators',
-            'exclude_editors',
             'prune_data_after_months',
             'default_view',
             'use_cookie',
@@ -339,6 +371,13 @@ class Rest {
         foreach ($allowed as $key) {
             if (isset($data[$key])) {
                 $settings[$key] = $data[$key];
+            }
+        }
+        
+        // Handle dynamic role exclusion settings (exclude_role_*)
+        foreach ($data as $key => $value) {
+            if (strpos($key, 'exclude_role_') === 0) {
+                $settings[$key] = (bool) $value;
             }
         }
         

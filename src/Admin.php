@@ -109,7 +109,36 @@ class Admin {
         $settings['_detected_country'] = self::detect_site_country();
         $settings['_is_eu'] = self::is_eu_site();
         
+        // Add available user roles for dynamic toggles
+        $settings['_user_roles'] = self::get_user_roles();
+        
         return new \WP_REST_Response($settings, 200);
+    }
+    
+    /**
+     * Get all registered user roles with labels
+     */
+    public static function get_user_roles(): array {
+        global $wp_roles;
+        
+        if (!isset($wp_roles)) {
+            $wp_roles = new \WP_Roles();
+        }
+        
+        $roles = [];
+        foreach ($wp_roles->roles as $role_slug => $role_data) {
+            // Skip subscriber - usually not worth excluding
+            if ($role_slug === 'subscriber') {
+                continue;
+            }
+            
+            $roles[] = [
+                'slug'  => $role_slug,
+                'name'  => translate_user_role($role_data['name']),
+            ];
+        }
+        
+        return $roles;
     }
     
     /**
@@ -120,7 +149,6 @@ class Admin {
         
         // Sanitize settings
         $sanitized = [
-            'exclude_admins'       => !empty($data['exclude_admins']),
             'exclude_bots'         => !empty($data['exclude_bots']),
             'honor_dnt'            => !empty($data['honor_dnt']),
             'data_retention_days'  => sanitize_text_field($data['data_retention_days'] ?? '90'),
@@ -132,6 +160,13 @@ class Admin {
             'gdpr_no_ua'           => !empty($data['gdpr_no_ua']),
             'gdpr_retention_days'  => sanitize_text_field($data['gdpr_retention_days'] ?? '180'),
         ];
+        
+        // Handle dynamic role exclusion settings
+        $roles = self::get_user_roles();
+        foreach ($roles as $role) {
+            $key = 'exclude_role_' . $role['slug'];
+            $sanitized[$key] = !empty($data[$key]);
+        }
         
         update_option('data_signals_settings', $sanitized);
         
@@ -340,30 +375,17 @@ class Admin {
                 <!-- General Settings -->
                 <table class="form-table">
                     <tr>
-                        <th scope="row"><?php esc_html_e('Exclude Administrators', 'data-signals'); ?></th>
+                        <th scope="row"><?php esc_html_e('Exclude User Roles', 'data-signals'); ?></th>
                         <td>
-                            <label>
-                                <input type="checkbox" name="exclude_admins" value="1" <?php checked($settings['exclude_admins'] ?? true); ?>>
-                                <?php esc_html_e('Don\'t track visits from administrators', 'data-signals'); ?>
+                            <p class="description" style="margin-bottom: 10px;"><?php esc_html_e('Do not track pageviews from these logged-in users.', 'data-signals'); ?></p>
+                            <?php foreach (self::get_user_roles() as $role): 
+                                $key = 'exclude_role_' . $role['slug'];
+                            ?>
+                            <label style="display: block; margin-bottom: 8px;">
+                                <input type="checkbox" name="<?php echo esc_attr($key); ?>" value="1" <?php checked($settings[$key] ?? ($role['slug'] === 'administrator')); ?>>
+                                <?php echo esc_html($role['name']); ?>
                             </label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><?php esc_html_e('Exclude Bots', 'data-signals'); ?></th>
-                        <td>
-                            <label>
-                                <input type="checkbox" name="exclude_bots" value="1" <?php checked($settings['exclude_bots'] ?? true); ?>>
-                                <?php esc_html_e('Filter out known bot traffic', 'data-signals'); ?>
-                            </label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><?php esc_html_e('Honor Do Not Track', 'data-signals'); ?></th>
-                        <td>
-                            <label>
-                                <input type="checkbox" name="honor_dnt" value="1" <?php checked($settings['honor_dnt'] ?? true); ?>>
-                                <?php esc_html_e('Respect browser\'s Do Not Track setting', 'data-signals'); ?>
-                            </label>
+                            <?php endforeach; ?>
                         </td>
                     </tr>
                     <tr>
@@ -403,13 +425,16 @@ class Admin {
      */
     private function save_settings_from_post(): void {
         $sanitized = [
-            'exclude_admins'       => !empty($_POST['exclude_admins']),
-            'exclude_bots'         => !empty($_POST['exclude_bots']),
-            'honor_dnt'            => !empty($_POST['honor_dnt']),
             'data_retention_days'  => sanitize_text_field($_POST['data_retention_days'] ?? '90'),
             'default_period'       => sanitize_text_field($_POST['default_period'] ?? '30'),
             'gdpr_mode'            => !empty($_POST['gdpr_mode']),
         ];
+        
+        // Handle dynamic role exclusion settings
+        foreach (self::get_user_roles() as $role) {
+            $key = 'exclude_role_' . $role['slug'];
+            $sanitized[$key] = !empty($_POST[$key]);
+        }
         
         update_option('data_signals_settings', $sanitized);
     }

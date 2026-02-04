@@ -94,8 +94,8 @@ function get_settings(): array {
         'default_view' => 'last_28_days',
         'is_dashboard_public' => false,
         'prune_data_after_months' => 24,
-        'exclude_administrators' => true,
-        'exclude_editors' => false,
+        // Default: exclude administrators
+        'exclude_role_administrator' => true,
         // Geolocation settings
         'geo_use_cloudflare' => false,
         'geo_api_fallback' => false,
@@ -121,17 +121,17 @@ function is_request_excluded(): bool {
         return true;
     }
     
-    // Don't track logged-in users based on settings
+    // Don't track logged-in users based on role settings
     if (is_user_logged_in()) {
         $settings = get_settings();
         $user = wp_get_current_user();
         
-        if ($settings['exclude_administrators'] && in_array('administrator', $user->roles)) {
-            return true;
-        }
-        
-        if ($settings['exclude_editors'] && in_array('editor', $user->roles)) {
-            return true;
+        // Check each user role against exclusion settings
+        foreach ($user->roles as $role) {
+            $key = 'exclude_role_' . $role;
+            if (!empty($settings[$key])) {
+                return true;
+            }
         }
     }
     

@@ -6,22 +6,6 @@
 import { __ } from '@wordpress/i18n';
 
 /**
- * Field definitions for GDPR Compliance settings
- */
-export const gdprFields = [
-	{
-		id: 'gdpr_mode',
-		label: __( 'Enable GDPR Mode', 'data-signals' ),
-		type: 'boolean',
-		Edit: 'toggle',
-		description: __(
-			'Privacy-compliant analytics for EU/EEA sites.',
-			'data-signals'
-		),
-	},
-];
-
-/**
  * GDPR info items shown when enabled
  */
 export const gdprInfoItems = [
@@ -33,82 +17,10 @@ export const gdprInfoItems = [
 ];
 
 /**
- * Field definitions for Tracking settings
+ * Field definitions for Tracking settings (includes retention & dashboard)
+ * Note: User role exclusion toggles are generated dynamically from _user_roles
  */
 export const trackingFields = [
-	{
-		id: 'exclude_administrators',
-		label: __( 'Exclude Logged-in Admins', 'data-signals' ),
-		type: 'boolean',
-		Edit: 'toggle',
-		description: __(
-			'Do not track pageviews from administrators.',
-			'data-signals'
-		),
-	},
-	{
-		id: 'exclude_editors',
-		label: __( 'Exclude Editors', 'data-signals' ),
-		type: 'boolean',
-		Edit: 'toggle',
-		description: __(
-			'Do not track pageviews from editors.',
-			'data-signals'
-		),
-	},
-];
-
-/**
- * Field definitions for Geolocation settings
- */
-export const geoFields = [
-	{
-		id: 'maxmind_license_key',
-		label: __( 'MaxMind License Key', 'data-signals' ),
-		type: 'text',
-		Edit: 'input',
-		description: __(
-			'Free license key from maxmind.com. Required for automatic GeoLite2 database downloads.',
-			'data-signals'
-		),
-		placeholder: 'xxxxxxxxxxxxxxxx',
-	},
-	{
-		id: 'geo_use_cloudflare',
-		label: __( 'Use Cloudflare IP Geolocation', 'data-signals' ),
-		type: 'boolean',
-		Edit: 'toggle',
-		description: __(
-			'Use Cloudflare CF-IPCountry header if available. Requires IP Geolocation enabled in Cloudflare.',
-			'data-signals'
-		),
-	},
-	{
-		id: 'geo_api_fallback',
-		label: __( 'Enable API Fallback (Dev Only)', 'data-signals' ),
-		type: 'boolean',
-		Edit: 'toggle',
-		description: __(
-			'Fall back to ip-api.com when GeoLite2 unavailable. Rate limited (45 req/min), not for production.',
-			'data-signals'
-		),
-	},
-	{
-		id: 'geolite2_db_path',
-		label: __( 'GeoLite2 Database Path (Optional)', 'data-signals' ),
-		type: 'text',
-		Edit: 'input',
-		description: __(
-			'Custom path to GeoLite2-Country.mmdb. Leave empty for automatic download to wp-content/uploads/data-signals/.',
-			'data-signals'
-		),
-	},
-];
-
-/**
- * Field definitions for Data Retention settings
- */
-export const retentionFields = [
 	{
 		id: 'prune_data_after_months',
 		label: __( 'Data Retention Period', 'data-signals' ),
@@ -125,12 +37,6 @@ export const retentionFields = [
 			'data-signals'
 		),
 	},
-];
-
-/**
- * Field definitions for Dashboard settings
- */
-export const dashboardFields = [
 	{
 		id: 'default_view',
 		label: __( 'Default Date Range', 'data-signals' ),
@@ -157,3 +63,46 @@ export const dashboardFields = [
 		),
 	},
 ];
+
+/**
+ * Field definitions for Geolocation settings
+ */
+export const geoFields = [
+	{
+		id: 'geo_method',
+		label: __( 'Geolocation Method', 'data-signals' ),
+		type: 'radio',
+		elements: [
+			{ value: 'geolite2', label: __( 'GeoLite2 Database (recommended)', 'data-signals' ) },
+			{ value: 'cloudflare', label: __( 'Cloudflare IP Geolocation', 'data-signals' ) },
+			{ value: 'none', label: __( 'Disabled', 'data-signals' ) },
+		],
+		description: __(
+			'Choose how to detect visitor country. GeoLite2 requires MaxMind license key.',
+			'data-signals'
+		),
+	},
+	{
+		id: 'maxmind_license_key',
+		label: __( 'MaxMind License Key', 'data-signals' ),
+		type: 'text',
+		Edit: 'input',
+		description: __(
+			'Free license key from maxmind.com. Required for GeoLite2 database downloads.',
+			'data-signals'
+		),
+		placeholder: 'xxxxxxxxxxxxxxxx',
+	},
+	{
+		id: 'geolite2_db_path',
+		label: __( 'GeoLite2 Database Path (Optional)', 'data-signals' ),
+		type: 'text',
+		Edit: 'input',
+		description: __(
+			'Custom path to GeoLite2-Country.mmdb. Leave empty for automatic download.',
+			'data-signals'
+		),
+	},
+];
+
+// Data Retention and Dashboard fields are now merged into trackingFields

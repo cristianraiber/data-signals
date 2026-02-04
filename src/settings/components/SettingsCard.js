@@ -3,9 +3,9 @@
  */
 
 import { __ } from '@wordpress/i18n';
-import { Button, ToggleControl, SelectControl, TextControl } from '@wordpress/components';
+import { Button, ToggleControl, SelectControl, TextControl, RadioControl } from '@wordpress/components';
 
-const SettingsCard = ( { title, fields, data, onChange, onSave, saving, hideHeader = false, hideFooter = false } ) => {
+const SettingsCard = ( { title, fields, data, onChange, onSave, saving, hideHeader = false, hideFooter = false, beforeFields = null, afterFields = null } ) => {
 	const renderField = ( field ) => {
 		const value = data[ field.id ];
 
@@ -18,6 +18,22 @@ const SettingsCard = ( { title, fields, data, onChange, onSave, saving, hideHead
 					label={ field.label }
 					help={ field.description }
 					checked={ !! value }
+					onChange={ ( newValue ) =>
+						onChange( { [ field.id ]: newValue } )
+					}
+				/>
+			);
+		}
+
+		// Radio field
+		if ( field.type === 'radio' && field.elements ) {
+			return (
+				<RadioControl
+					key={ field.id }
+					label={ field.label }
+					help={ field.description }
+					selected={ value || field.elements[ 0 ]?.value }
+					options={ field.elements }
 					onChange={ ( newValue ) =>
 						onChange( { [ field.id ]: newValue } )
 					}
@@ -72,7 +88,9 @@ const SettingsCard = ( { title, fields, data, onChange, onSave, saving, hideHead
 				</div>
 			) }
 			<div className="ds-settings-card-body">
+				{ beforeFields }
 				{ fields.map( renderField ) }
+				{ afterFields }
 			</div>
 			{ ! hideFooter && (
 				<div className="ds-settings-card-footer">

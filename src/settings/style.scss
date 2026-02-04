@@ -83,51 +83,19 @@ $text-muted: #757575;
 	}
 
 	.ds-settings-card-body {
-		padding: 20px;
+		padding: 24px;
 
-		.components-toggle-control {
-			margin-bottom: 20px;
-			padding-bottom: 20px;
-			border-bottom: 1px solid $border-color;
-
-			&:last-child {
-				margin-bottom: 0;
-				padding-bottom: 0;
-				border-bottom: none;
-			}
-		}
-
-		.components-select-control {
-			margin-bottom: 0;
-		}
-
-		.components-text-control {
-			margin-bottom: 20px;
-			padding-bottom: 20px;
-			border-bottom: 1px solid $border-color;
+		// Symmetric spacing for all field types
+		.components-base-control {
+			margin-bottom: 24px;
 
 			&:last-child {
 				margin-bottom: 0;
-				padding-bottom: 0;
-				border-bottom: none;
 			}
 		}
 
-		.components-base-control__label {
-			font-size: 13px;
-			font-weight: 500;
-			color: $text-dark;
-			margin-bottom: 6px;
-		}
-
-		.components-base-control__help {
-			font-size: 12px;
-			color: $text-muted;
-			margin-top: 6px;
-		}
-
+		// Toggle control - description aligned with label
 		.components-toggle-control {
-
 			.components-base-control__field {
 				display: flex;
 				align-items: flex-start;
@@ -136,6 +104,7 @@ $text-muted: #757575;
 
 			.components-form-toggle {
 				margin-right: 12px;
+				margin-top: 2px;
 				flex-shrink: 0;
 			}
 
@@ -143,15 +112,74 @@ $text-muted: #757575;
 				font-size: 14px;
 				font-weight: 500;
 				color: $text-dark;
+				line-height: 1.4;
 			}
 
+			// Description with 20px indent
 			.components-base-control__help {
 				margin-left: 0;
 				margin-top: 4px;
+				padding-left: 12px;
+				font-size: 13px;
+				color: $text-muted;
+				line-height: 1.5;
 			}
 		}
 
-		.components-select-control__input,
+		// Select control
+		.components-select-control {
+			.components-base-control__label {
+				display: block;
+				font-size: 13px;
+				font-weight: 600;
+				color: $text-dark;
+				margin-bottom: 8px;
+				text-transform: uppercase;
+				letter-spacing: 0.5px;
+			}
+
+			.components-base-control__help {
+				margin-top: 8px;
+				font-size: 12px;
+				color: $text-muted;
+			}
+		}
+
+		// Text control
+		.components-text-control {
+			.components-base-control__label {
+				display: block;
+				font-size: 13px;
+				font-weight: 600;
+				color: $text-dark;
+				margin-bottom: 8px;
+				text-transform: uppercase;
+				letter-spacing: 0.5px;
+			}
+
+			.components-base-control__help {
+				margin-top: 8px;
+				font-size: 12px;
+				color: $text-muted;
+			}
+		}
+
+		// Select styling - compact width
+		.components-select-control {
+			.components-input-control__container {
+				max-width: 280px !important;
+			}
+		}
+
+		.components-select-control__input {
+			border: 1px solid #8c8f94;
+			border-radius: 4px;
+			padding: 8px 12px;
+			font-size: 14px;
+			min-height: 40px;
+			max-width: 280px !important;
+		}
+
 		.components-text-control__input {
 			border: 1px solid #8c8f94;
 			border-radius: 4px;
@@ -371,6 +399,62 @@ $text-muted: #757575;
 .ds-settings-card-inline {
 	.ds-settings-card-body {
 		padding-top: 0;
+	}
+}
+
+// User role exclusion toggles
+.ds-role-toggles {
+	margin-bottom: 24px;
+	padding-bottom: 24px;
+	border-bottom: 1px solid $border-color;
+	
+	.components-toggle-control {
+		margin-bottom: 12px !important;
+		padding-bottom: 0 !important;
+		border-bottom: none !important;
+		
+		&:last-child {
+			margin-bottom: 0 !important;
+		}
+	}
+}
+
+// GDPR section in Tracking Options
+.ds-gdpr-section {
+	margin-top: 24px;
+	padding-top: 24px;
+	border-top: 1px solid $border-color;
+	
+	.ds-detected-badge {
+		display: inline-block;
+		margin-left: 8px;
+		padding: 2px 8px;
+		background: $bg-light;
+		border-radius: 4px;
+		font-size: 11px;
+		font-weight: normal;
+		color: $text-muted;
+	}
+	
+	.ds-gdpr-info {
+		margin-top: 12px;
+		margin-left: 48px;
+		padding: 12px 16px;
+		background: #e8f5e9;
+		border-left: 3px solid #4caf50;
+		border-radius: 0 4px 4px 0;
+		
+		ul {
+			margin: 0;
+			padding: 0;
+			list-style: none;
+			
+			li {
+				font-size: 13px;
+				color: #2e7d32;
+				line-height: 1.6;
+			}
+		}
 	}
 }
 
